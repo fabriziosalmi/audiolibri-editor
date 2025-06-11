@@ -31,7 +31,8 @@ const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for dynamic UI elements
+      "style-src-attr": ["'unsafe-inline'"], // Allow inline style attributes
       scriptSrc: [
         "'self'", 
         "'unsafe-inline'", // Allow inline scripts for editing functionality

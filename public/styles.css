@@ -1675,3 +1675,39 @@ body.modal-open {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
+
+/* CSS classes to replace inline styles and avoid CSP violations */
+.changes-indicator-hidden {
+  display: none;
+}
+
+.item-details-hidden {
+  display: none;
+}
+
+.categories-display {
+  min-height: 38px;
+  background-color: #f8f9fa;
+}
+
+.tags-display {
+  min-height: 100px;
+  background-color: #f8f9fa;
+}
+
+.selected-items-list {
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.import-progress-hidden {
+  display: none;
+}
+
+.progress-bar-zero {
+  width: 0%;
+}
+
+.action-card-pointer {
+  cursor: pointer;
+}

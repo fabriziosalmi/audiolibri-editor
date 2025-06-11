@@ -303,6 +303,33 @@
       color: #6c757d;
       margin-top: 5px;
     }
+    
+    /* Fix for inline styles to avoid CSP violations */
+    .items-per-page-select {
+      width: auto;
+    }
+    
+    .large-spinner {
+      width: 3rem !important;
+      height: 3rem !important;
+    }
+    
+    .column-area {
+      min-height: 200px;
+    }
+    
+    .loading-overlay-fixed {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
   </style>
 </head>
 <body class="json-editor-page">
@@ -423,7 +450,7 @@
         <div class="col-md-6">
           <div class="d-flex align-items-center gap-3">
             <label for="itemsPerPage" class="form-label mb-0">Elementi per pagina:</label>
-            <select class="form-select" id="itemsPerPage" style="width: auto;">
+            <select class="form-select items-per-page-select" id="itemsPerPage">
               <option value="25">25</option>
               <option value="50" selected>50</option>
               <option value="100">100</option>
@@ -483,7 +510,7 @@
   <!-- Loading Overlay -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-content">
-      <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+      <div class="spinner-border text-primary mb-3 large-spinner"></div>
       <h5>Caricamento dati...</h5>
       <p class="text-muted">Attendere prego</p>
     </div>
@@ -533,13 +560,13 @@
           <div class="row">
             <div class="col-md-6">
               <h6>Colonne Visibili</h6>
-              <div id="visibleColumns" class="border rounded p-3 mb-3" style="min-height: 200px;">
+              <div id="visibleColumns" class="border rounded p-3 mb-3 column-area">
                 <!-- Visible columns will be listed here -->
               </div>
             </div>
             <div class="col-md-6">
               <h6>Colonne Nascoste</h6>
-              <div id="hiddenColumns" class="border rounded p-3 mb-3" style="min-height: 200px;">
+              <div id="hiddenColumns" class="border rounded p-3 mb-3 column-area">
                 <!-- Hidden columns will be listed here -->
               </div>
             </div>
@@ -965,9 +992,9 @@
   </div>
 
   <!-- Loading Overlay -->
-  <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 9999; justify-content: center; align-items: center;">
+  <div id="loadingOverlay" class="loading-overlay-fixed">
     <div class="text-center text-white">
-      <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+      <div class="spinner-border text-primary mb-3 large-spinner" role="status">
         <span class="visually-hidden">Caricamento...</span>
       </div>
       <h4 id="loadingMessage">Caricamento in corso...</h4>

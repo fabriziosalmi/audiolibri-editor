@@ -95,7 +95,7 @@
                role="menuitem" aria-label="Salva modifiche"
                data-has-tooltip="true" data-tooltip="Salva Modifiche">
               <i class="fas fa-save" aria-hidden="true"></i>
-              <span class="changes-indicator" id="changesIndicator" style="display: none;" aria-hidden="true">●</span>
+              <span class="changes-indicator changes-indicator-hidden" id="changesIndicator" aria-hidden="true">●</span>
             </a>
           </li>
           
@@ -203,7 +203,7 @@
               <div id="noItemSelected" class="text-center py-5">
                 <p class="text-muted">Seleziona un elemento dalla lista per modificarlo</p>
               </div>
-              <div id="itemDetails" style="display: none;">
+              <div id="itemDetails" class="item-details-hidden">
                 <!-- Navigation tabs for different sections -->
                 <ul class="nav nav-tabs" id="editTabs" role="tablist">
                   <li class="nav-item" role="presentation">
@@ -372,7 +372,7 @@
                     <div class="row mb-3">
                       <div class="col-md-6">
                         <label for="categories" class="form-label">Categorie YouTube</label>
-                        <div id="categoriesDisplay" class="form-control" style="min-height: 38px; background-color: #f8f9fa;">
+                        <div id="categoriesDisplay" class="form-control categories-display">
                           <!-- Categories will be displayed here -->
                         </div>
                       </div>
