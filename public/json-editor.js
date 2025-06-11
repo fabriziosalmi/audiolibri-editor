@@ -1969,6 +1969,26 @@ class JSONEditor {
 
 // Initialize the JSON Editor when the page loads
 document.addEventListener('DOMContentLoaded', function() {
+  // Initialize tooltips
+  function initializeTooltips() {
+    // Initialize custom tooltips for navigation
+    const elementsWithTooltips = document.querySelectorAll('[data-has-tooltip="true"]');
+    
+    elementsWithTooltips.forEach(element => {
+      const tooltipText = element.getAttribute('data-tooltip');
+      if (tooltipText) {
+        element.setAttribute('data-bs-toggle', 'tooltip');
+        element.setAttribute('data-bs-placement', 'bottom');
+        element.setAttribute('title', tooltipText);
+        new bootstrap.Tooltip(element);
+      }
+    });
+  }
+  
+  // Initialize tooltips first
+  initializeTooltips();
+  
+  // Then initialize the JSON Editor
   window.jsonEditor = new JSONEditor();
 });
 

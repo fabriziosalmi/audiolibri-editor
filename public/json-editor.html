@@ -315,20 +315,24 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="index.html">
-              <i class="fas fa-arrow-left me-1"></i>Torna all'Editor Principale
+        <ul class="navbar-nav ms-auto" role="menubar">
+          <li class="nav-item" role="none">
+            <a class="nav-link nav-icon" href="index.html" role="menuitem" aria-label="Torna all'Editor Principale"
+               data-has-tooltip="true" data-tooltip="Torna all'Editor Principale">
+              <i class="fas fa-arrow-left" aria-hidden="true"></i>
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" id="saveAllBtn" title="Salva tutte le modifiche">
-              <i class="fas fa-save me-1"></i>Salva Modifiche
+          <li class="nav-item" role="none">
+            <a class="nav-link nav-icon save-btn" href="#" id="saveAllBtn" role="menuitem" aria-label="Salva tutte le modifiche"
+               data-has-tooltip="true" data-tooltip="Salva Modifiche">
+              <i class="fas fa-save" aria-hidden="true"></i>
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" id="helpJsonBtn" data-bs-toggle="modal" data-bs-target="#helpJsonModal">
-              <i class="fas fa-question-circle me-1"></i>Guida
+          <li class="nav-item" role="none">
+            <a class="nav-link nav-icon" href="#" id="helpJsonBtn" data-bs-toggle="modal" data-bs-target="#helpJsonModal"
+               role="menuitem" aria-label="Guida e aiuto"
+               data-has-tooltip="true" data-tooltip="Guida e Aiuto">
+              <i class="fas fa-question-circle" aria-hidden="true"></i>
             </a>
           </li>
         </ul>

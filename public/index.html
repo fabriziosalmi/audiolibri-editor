@@ -43,52 +43,67 @@
         <!-- Right side - Action icons -->
         <ul class="navbar-nav ms-auto" role="menubar">
           <li class="nav-item" role="none">
-            <a class="nav-link nav-icon" href="#" id="importBtn" data-bs-toggle="modal" data-bs-target="#importModal" 
-               data-has-tooltip="true" data-tooltip="Importa da YouTube" role="menuitem" aria-label="Importa da YouTube">
+            <a class="nav-link nav-icon" href="#" id="importSingleBtn" data-bs-toggle="modal" data-bs-target="#importSingleModal" 
+               role="menuitem" aria-label="Importa video singolo da YouTube"
+               data-has-tooltip="true" data-tooltip="Importa Video YouTube">
               <i class="fab fa-youtube" aria-hidden="true"></i>
             </a>
           </li>
           
           <li class="nav-item" role="none">
-            <a class="nav-link nav-icon" href="#" id="exportBtn" 
-               data-has-tooltip="true" data-tooltip="Esporta dati" role="menuitem" aria-label="Esporta dati">
-              <i class="fas fa-download" aria-hidden="true"></i>
-            </a>
-          </li>
-          
-          <li class="nav-item" role="none">
-            <a class="nav-link nav-icon" href="#" id="genreManagementBtn" 
-               data-has-tooltip="true" data-tooltip="Gestione generi" role="menuitem" aria-label="Gestione generi">
-              <i class="fas fa-tags" aria-hidden="true"></i>
+            <a class="nav-link nav-icon" href="#" id="importPlaylistBtn" data-bs-toggle="modal" data-bs-target="#importPlaylistModal" 
+               role="menuitem" aria-label="Importa playlist da YouTube"
+               data-has-tooltip="true" data-tooltip="Importa Playlist YouTube">
+              <i class="fas fa-list" aria-hidden="true"></i>
             </a>
           </li>
           
           <li class="nav-item" role="none">
             <a class="nav-link nav-icon" href="#" id="bulkEditBtn" 
-               data-has-tooltip="true" data-tooltip="Modifica multipla" role="menuitem" aria-label="Modifica multipla">
+               role="menuitem" aria-label="Modifica multipla"
+               data-has-tooltip="true" data-tooltip="Modifica Multipla">
               <i class="fas fa-edit" aria-hidden="true"></i>
             </a>
           </li>
           
           <li class="nav-item" role="none">
             <a class="nav-link nav-icon" href="json-editor.html" 
-               data-has-tooltip="true" data-tooltip="Editor JSON completo" role="menuitem" aria-label="Editor JSON completo">
+               role="menuitem" aria-label="Editor JSON completo"
+               data-has-tooltip="true" data-tooltip="Editor JSON">
               <i class="fas fa-table" aria-hidden="true"></i>
             </a>
           </li>
           
           <li class="nav-item" role="none">
-            <a class="nav-link nav-icon" href="#" id="helpBtn" data-bs-toggle="modal" data-bs-target="#helpModal" 
-               data-has-tooltip="true" data-tooltip="Guida e aiuto" role="menuitem" aria-label="Guida e aiuto">
-              <i class="fas fa-question-circle" aria-hidden="true"></i>
+            <a class="nav-link nav-icon" href="edit-log.html" 
+               role="menuitem" aria-label="Visualizza log delle modifiche"
+               data-has-tooltip="true" data-tooltip="Log Modifiche">
+              <i class="fas fa-history" aria-hidden="true"></i>
+            </a>
+          </li>
+          
+          <li class="nav-item" role="none">
+            <a class="nav-link nav-icon" href="#" id="exportBtn" 
+               role="menuitem" aria-label="Esporta dati"
+               data-has-tooltip="true" data-tooltip="Esporta Dati">
+              <i class="fas fa-download" aria-hidden="true"></i>
             </a>
           </li>
           
           <li class="nav-item" role="none">
             <a class="nav-link nav-icon save-btn" href="#" id="saveChangesBtn" 
-               data-has-tooltip="true" data-tooltip="Salva modifiche" role="menuitem" aria-label="Salva modifiche">
+               role="menuitem" aria-label="Salva modifiche"
+               data-has-tooltip="true" data-tooltip="Salva Modifiche">
               <i class="fas fa-save" aria-hidden="true"></i>
               <span class="changes-indicator" id="changesIndicator" style="display: none;" aria-hidden="true">●</span>
+            </a>
+          </li>
+          
+          <li class="nav-item" role="none">
+            <a class="nav-link nav-icon" href="#" id="helpBtn" data-bs-toggle="modal" data-bs-target="#helpModal" 
+               role="menuitem" aria-label="Guida e aiuto"
+               data-has-tooltip="true" data-tooltip="Guida e Aiuto">
+              <i class="fas fa-question-circle" aria-hidden="true"></i>
             </a>
           </li>
         </ul>
@@ -99,60 +114,6 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer">
     <!-- Toasts will be dynamically inserted here -->
-  </div>
-
-  <!-- Floating Action Button for Quick Actions -->
-  <div class="fab" id="quickActionsFab" title="Azioni Rapide">
-    <i class="fas fa-plus"></i>
-  </div>
-
-  <!-- Enhanced Quick Actions Panel -->
-  <div class="quick-actions-panel" id="quickActionsPanel" style="display: none;">
-    <div class="quick-actions-content">
-      <div class="row g-2">
-        <div class="col-6 col-md-4">
-          <button class="btn btn-outline-primary w-100 quick-action-btn" id="quickSearchBtn">
-            <i class="fas fa-search mb-1"></i>
-            <div class="small">Ricerca Rapida</div>
-          </button>
-        </div>
-        <div class="col-6 col-md-4">
-          <button class="btn btn-outline-success w-100 quick-action-btn" id="quickImportBtn">
-            <i class="fab fa-youtube mb-1"></i>
-            <div class="small">Importa Video</div>
-          </button>
-        </div>
-        <div class="col-6 col-md-4">
-          <button class="btn btn-outline-info w-100 quick-action-btn" id="quickGenreBtn">
-            <i class="fas fa-tags mb-1"></i>
-            <div class="small">Gestisci Generi</div>
-          </button>
-        </div>
-        <div class="col-6 col-md-4">
-          <button class="btn btn-outline-warning w-100 quick-action-btn" id="quickBulkEditBtn">
-            <i class="fas fa-edit mb-1"></i>
-            <div class="small">Modifica Multipla</div>
-          </button>
-        </div>
-        <div class="col-6 col-md-4">
-          <button class="btn btn-outline-secondary w-100 quick-action-btn" id="quickExportBtn">
-            <i class="fas fa-download mb-1"></i>
-            <div class="small">Esporta Dati</div>
-          </button>
-        </div>
-        <div class="col-6 col-md-4">
-          <button class="btn btn-outline-danger w-100 quick-action-btn" id="quickSaveBtn">
-            <i class="fas fa-save mb-1"></i>
-            <div class="small">Salva Tutto</div>
-          </button>
-        </div>
-      </div>
-      <div class="text-center mt-2">
-        <button class="btn btn-sm btn-outline-light" id="quickHelpBtn">
-          <i class="fas fa-question-circle me-1"></i>Guida
-        </button>
-      </div>
-    </div>
   </div>
 
   <div class="container mt-4">
@@ -197,18 +158,22 @@
           </div>
           <div class="card-body p-0">
             <!-- Pagination Controls -->
-            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
-              <div>
-                <select class="form-select form-select-sm" id="itemsPerPage" style="width: auto;">
-                  <option value="20">20 per pagina</option>
-                  <option value="50">50 per pagina</option>
-                  <option value="100">100 per pagina</option>
+            <div class="p-3 border-bottom">
+              <!-- Items per page selector -->
+              <div class="mb-2">
+                <label for="itemsPerPage" class="form-label small mb-1">Elementi per pagina:</label>
+                <select class="form-select form-select-sm" id="itemsPerPage">
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
                 </select>
               </div>
+              
+              <!-- Pagination navigation -->
               <nav aria-label="Paginazione elementi">
-                <ul class="pagination pagination-sm mb-0" id="pagination">
+                <div class="d-flex flex-wrap justify-content-center gap-1" id="pagination">
                   <!-- Pagination buttons will be generated here -->
-                </ul>
+                </div>
               </nav>
             </div>
             
@@ -581,153 +546,218 @@
     </div>
   </div>
 
-  <!-- Import Modal -->
-  <div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+  <!-- Single Video Import Modal -->
+  <div class="modal fade" id="importSingleModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
-        <div class="modal-header bg-warning text-dark">
-          <h5 class="modal-title"><i class="fab fa-youtube me-2"></i>Importa da YouTube</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">
+            <i class="fab fa-youtube me-2"></i>Importa Video Singolo da YouTube
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
         </div>
         <div class="modal-body">
-          <ul class="nav nav-tabs" id="importTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="single-video-tab" data-bs-toggle="tab" data-bs-target="#single-video" type="button" role="tab">
-                <i class="fas fa-video me-1"></i>Video Singolo
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="playlist-tab" data-bs-toggle="tab" data-bs-target="#playlist" type="button" role="tab">
-                <i class="fas fa-list me-1"></i>Playlist
-              </button>
-            </li>
-          </ul>
-          
-          <div class="tab-content mt-3" id="importTabsContent">
-            <!-- Single Video Import -->
-            <div class="tab-pane fade show active" id="single-video" role="tabpanel">
-              <form id="singleVideoForm">
-                <div class="mb-3">
-                  <label for="singleVideoUrl" class="form-label">URL del Video YouTube</label>
-                  <input type="url" class="form-control" id="singleVideoUrl" placeholder="https://www.youtube.com/watch?v=..." required>
-                  <div class="form-text">Inserisci l'URL di un video YouTube da importare come nuovo elemento</div>
-                </div>
-                
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label for="singleVideoType" class="form-label">Tipo Contenuto</label>
-                    <select class="form-select" id="singleVideoType" required>
-                      <option value="">Seleziona tipo</option>
-                      <option value="audiobook">Audiolibro</option>
-                      <option value="podcast">Podcast</option>
-                      <option value="series">Serie (Multi-parte)</option>
-                    </select>
-                  </div>
-                  <div class="col-md-6">
-                    <label for="singleVideoLanguage" class="form-label">Lingua</label>
-                    <select class="form-select" id="singleVideoLanguage" required>
-                      <option value="">Seleziona lingua</option>
-                      <option value="it">Italiano</option>
-                      <option value="en">Inglese</option>
-                      <option value="fr">Francese</option>
-                      <option value="de">Tedesco</option>
-                      <option value="es">Spagnolo</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div class="mb-3">
-                  <label for="singleVideoGenre" class="form-label">Genere (opzionale)</label>
-                  <input type="text" class="form-control" id="singleVideoGenre" placeholder="es. Romanzo, Podcast, Saggistica...">
-                </div>
-                
-                <div class="mb-3">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="singleVideoProcessed">
-                    <label class="form-check-label" for="singleVideoProcessed">
-                      Segna come processato
-                    </label>
-                  </div>
-                </div>
-              </form>
+          <form id="singleVideoForm">
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>Importa un singolo video:</strong> Inserisci l'URL di un video YouTube per aggiungerlo al database degli audiolibri.
             </div>
             
-            <!-- Playlist Import -->
-            <div class="tab-pane fade" id="playlist" role="tabpanel">
-              <form id="playlistForm">
-                <div class="mb-3">
-                  <label for="playlistUrl" class="form-label">URL della Playlist YouTube</label>
-                  <input type="url" class="form-control" id="playlistUrl" placeholder="https://www.youtube.com/playlist?list=..." required>
-                  <div class="form-text">Inserisci l'URL di una playlist YouTube per importare tutti i video</div>
-                </div>
-                
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label for="playlistType" class="form-label">Tipo Contenuto</label>
-                    <select class="form-select" id="playlistType" required>
-                      <option value="">Seleziona tipo</option>
-                      <option value="audiobook">Audiolibro</option>
-                      <option value="podcast">Podcast</option>
-                      <option value="series">Serie (Multi-parte)</option>
-                    </select>
-                  </div>
-                  <div class="col-md-6">
-                    <label for="playlistLanguage" class="form-label">Lingua</label>
-                    <select class="form-select" id="playlistLanguage" required>
-                      <option value="">Seleziona lingua</option>
-                      <option value="it">Italiano</option>
-                      <option value="en">Inglese</option>
-                      <option value="fr">Francese</option>
-                      <option value="de">Tedesco</option>
-                      <option value="es">Spagnolo</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div class="mb-3">
-                  <label for="playlistGenre" class="form-label">Genere (opzionale)</label>
-                  <input type="text" class="form-control" id="playlistGenre" placeholder="es. Romanzo, Podcast, Saggistica...">
-                </div>
-                
-                <div class="mb-3">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="playlistProcessed">
-                    <label class="form-check-label" for="playlistProcessed">
-                      Segna tutti come processati
-                    </label>
-                  </div>
-                </div>
-                
-                <div class="mb-3">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="createSeries" checked>
-                    <label class="form-check-label" for="createSeries">
-                      Crea come serie collegata (per audiolibri multi-parte)
-                    </label>
-                  </div>
-                </div>
-              </form>
+            <div class="mb-3">
+              <label for="singleVideoUrl" class="form-label">
+                <i class="fas fa-link me-1"></i>URL del Video YouTube
+              </label>
+              <input type="url" class="form-control" id="singleVideoUrl" 
+                     placeholder="https://www.youtube.com/watch?v=..." required>
+              <div class="form-text">
+                Formati supportati: youtube.com/watch?v=..., youtu.be/..., youtube.com/embed/...
+              </div>
             </div>
-          </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="singleVideoType" class="form-label">
+                  <i class="fas fa-tag me-1"></i>Tipo Contenuto
+                </label>
+                <select class="form-select" id="singleVideoType" required>
+                  <option value="">Seleziona tipo</option>
+                  <option value="audiobook">📚 Audiolibro</option>
+                  <option value="podcast">🎙️ Podcast</option>
+                  <option value="series">📺 Serie (Multi-parte)</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="singleVideoLanguage" class="form-label">
+                  <i class="fas fa-language me-1"></i>Lingua
+                </label>
+                <select class="form-select" id="singleVideoLanguage" required>
+                  <option value="">Seleziona lingua</option>
+                  <option value="it">🇮🇹 Italiano</option>
+                  <option value="en">🇺🇸 Inglese</option>
+                  <option value="fr">🇫🇷 Francese</option>
+                  <option value="de">🇩🇪 Tedesco</option>
+                  <option value="es">🇪🇸 Spagnolo</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="singleVideoGenre" class="form-label">
+                <i class="fas fa-tags me-1"></i>Genere (opzionale)
+              </label>
+              <input type="text" class="form-control" id="singleVideoGenre" 
+                     placeholder="es. Romanzo, Thriller, Biografia, Saggistica...">
+              <div class="form-text">Il genere può essere modificato successivamente</div>
+            </div>
+            
+            <div class="mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="singleVideoProcessed">
+                <label class="form-check-label" for="singleVideoProcessed">
+                  <i class="fas fa-check-circle me-1"></i>Segna immediatamente come processato
+                </label>
+                <div class="form-text">Seleziona se il contenuto è già pronto per la pubblicazione</div>
+              </div>
+            </div>
+          </form>
           
           <!-- Import Progress -->
-          <div id="importProgress" class="mt-3" style="display: none;">
+          <div id="singleImportProgress" class="mt-3" style="display: none;">
             <div class="progress">
-              <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+              <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
             </div>
             <div class="text-center mt-2">
-              <small id="importStatus">Inizializzazione...</small>
+              <small id="singleImportStatus">Inizializzazione...</small>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Annulla importazione" data-bs-toggle="tooltip" data-bs-placement="top">
-            <i class="fas fa-times"></i>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>Annulla
           </button>
-          <button type="button" class="btn btn-warning" id="importSingleVideoBtn" title="Importa video da YouTube" data-bs-toggle="tooltip" data-bs-placement="top">
-            <i class="fas fa-download"></i>
+          <button type="button" class="btn btn-danger" id="importSingleVideoBtn">
+            <i class="fas fa-download me-1"></i>Importa Video
           </button>
-          <button type="button" class="btn btn-warning" id="importPlaylistBtn" style="display: none;">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Playlist Import Modal -->
+  <div class="modal fade" id="importPlaylistModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title">
+            <i class="fas fa-list me-2"></i>Importa Playlist da YouTube
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+          <form id="playlistForm">
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>Importazione multipla:</strong> L'importazione di playlist può richiedere diversi minuti a seconda del numero di video.
+            </div>
+            
+            <div class="mb-3">
+              <label for="playlistUrl" class="form-label">
+                <i class="fas fa-link me-1"></i>URL della Playlist YouTube
+              </label>
+              <input type="url" class="form-control" id="playlistUrl" 
+                     placeholder="https://www.youtube.com/playlist?list=..." required>
+              <div class="form-text">
+                Formati supportati: youtube.com/playlist?list=..., youtube.com/watch?list=...
+              </div>
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="playlistType" class="form-label">
+                  <i class="fas fa-tag me-1"></i>Tipo Contenuto per Tutti i Video
+                </label>
+                <select class="form-select" id="playlistType" required>
+                  <option value="">Seleziona tipo</option>
+                  <option value="audiobook">📚 Audiolibro</option>
+                  <option value="podcast">🎙️ Podcast</option>
+                  <option value="series">📺 Serie (Multi-parte)</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="playlistLanguage" class="form-label">
+                  <i class="fas fa-language me-1"></i>Lingua per Tutti i Video
+                </label>
+                <select class="form-select" id="playlistLanguage" required>
+                  <option value="">Seleziona lingua</option>
+                  <option value="it">🇮🇹 Italiano</option>
+                  <option value="en">🇺🇸 Inglese</option>
+                  <option value="fr">🇫🇷 Francese</option>
+                  <option value="de">🇩🇪 Tedesco</option>
+                  <option value="es">🇪🇸 Spagnolo</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="playlistGenre" class="form-label">
+                <i class="fas fa-tags me-1"></i>Genere per Tutti i Video (opzionale)
+              </label>
+              <input type="text" class="form-control" id="playlistGenre" 
+                     placeholder="es. Romanzo, Thriller, Biografia, Saggistica...">
+              <div class="form-text">Verrà applicato a tutti i video della playlist</div>
+            </div>
+            
+            <div class="mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="playlistProcessed">
+                <label class="form-check-label" for="playlistProcessed">
+                  <i class="fas fa-check-circle me-1"></i>Segna tutti i video come processati
+                </label>
+                <div class="form-text">Seleziona se tutti i contenuti sono pronti per la pubblicazione</div>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="createSeries" checked>
+                <label class="form-check-label" for="createSeries">
+                  <i class="fas fa-link me-1"></i>Crea come serie collegata
+                </label>
+                <div class="form-text">Ideale per audiolibri divisi in più parti o episodi di podcast</div>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="reverseOrder">
+                <label class="form-check-label" for="reverseOrder">
+                  <i class="fas fa-sort-numeric-down me-1"></i>Inverti ordine dei video
+                </label>
+                <div class="form-text">Utile se la playlist è in ordine cronologico invece che narrativo</div>
+              </div>
+            </div>
+          </form>
+          
+          <!-- Import Progress -->
+          <div id="playlistImportProgress" class="mt-3" style="display: none;">
+            <div class="progress">
+              <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+            </div>
+            <div class="text-center mt-2">
+              <small id="playlistImportStatus">Inizializzazione...</small>
+            </div>
+            <div class="mt-2">
+              <small class="text-muted">
+                Video importati: <span id="importedCount">0</span> / <span id="totalCount">0</span>
+              </small>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>Annulla
+          </button>
+          <button type="button" class="btn btn-warning" id="importPlaylistVideoBtn">
             <i class="fas fa-download me-1"></i>Importa Playlist
           </button>
         </div>
@@ -822,9 +852,6 @@
                 <button class="nav-link" id="help-bulk-tab" data-bs-toggle="pill" data-bs-target="#help-bulk" type="button" role="tab">
                   <i class="fas fa-layer-group me-2"></i>Operazioni Multiple
                 </button>
-                <button class="nav-link" id="help-genres-tab" data-bs-toggle="pill" data-bs-target="#help-genres" type="button" role="tab">
-                  <i class="fas fa-tags me-2"></i>Gestione Generi
-                </button>
                 <button class="nav-link" id="help-import-tab" data-bs-toggle="pill" data-bs-target="#help-import" type="button" role="tab">
                   <i class="fab fa-youtube me-2"></i>Importazione
                 </button>
@@ -873,7 +900,6 @@
                     <ol class="mb-0">
                       <li><strong>Cerca</strong> gli elementi da modificare usando filtri e ricerca</li>
                       <li><strong>Modifica</strong> i dettagli necessari uno per uno o in gruppo</li>
-                      <li><strong>Gestisci</strong> i generi per mantenere consistenza</li>
                       <li><strong>Salva</strong> le modifiche creando una Pull Request</li>
                     </ol>
                   </div>
@@ -1035,65 +1061,6 @@
                       <li>Marcare come processati gruppi di elementi completati</li>
                       <li>Standardizzare dati simili su più opere</li>
                     </ul>
-                  </div>
-                </div>
-
-                <!-- Genres Tab -->
-                <div class="tab-pane fade" id="help-genres" role="tabpanel">
-                  <h4><i class="fas fa-tags me-2 text-info"></i>Gestione Generi Avanzata</h4>
-                  
-                  <div class="card mb-3">
-                    <div class="card-header"><strong>Panoramica Generi</strong></div>
-                    <div class="card-body">
-                      <p>La gestione generi ti aiuta a mantenere un database pulito e organizzato, rilevando automaticamente problemi comuni:</p>
-                      <div class="row">
-                        <div class="col-md-6">
-                          <ul>
-                            <li><strong>Duplicati potenziali:</strong> "Romanzo" vs "Romanzi"</li>
-                            <li><strong>Errori di battitura:</strong> "Fantascenca" invece di "Fantascienza"</li>
-                            <li><strong>Variazioni:</strong> "Giallo" vs "Gialli" vs "Noir"</li>
-                          </ul>
-                        </div>
-                        <div class="col-md-6">
-                          <ul>
-                            <li><strong>Generi vuoti:</strong> Elementi senza genere assegnato</li>
-                            <li><strong>Generi singoli:</strong> Usati solo una volta</li>
-                            <li><strong>Standardizzazione:</strong> Nomi uniformi</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="card mb-3">
-                    <div class="card-header"><strong>Operazioni Disponibili</strong></div>
-                    <div class="card-body">
-                      <div class="row">
-                        <div class="col-md-6">
-                          <h6><i class="fas fa-compress-alt me-2 text-warning"></i>Unire Generi</h6>
-                          <ol>
-                            <li>Seleziona 2+ generi simili</li>
-                            <li>Clicca "Unisci Selezionati"</li>
-                            <li>Scegli o inserisci il nome finale</li>
-                            <li>Conferma l'operazione</li>
-                          </ol>
-                        </div>
-                        <div class="col-md-6">
-                          <h6><i class="fas fa-edit me-2 text-primary"></i>Modificare Singoli Generi</h6>
-                          <ol>
-                            <li>Clicca l'icona matita sul genere</li>
-                            <li>Inserisci il nuovo nome</li>
-                            <li>Il sistema aggiorna tutti gli elementi</li>
-                            <li>Le modifiche sono automatiche</li>
-                          </ol>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="alert alert-success">
-                    <h6><i class="fas fa-magic me-2"></i>Rilevamento Automatico Intelligente:</h6>
-                    <p class="mb-0">Il sistema usa algoritmi avanzati per identificare generi simili basandosi su: distanza di Levenshtein, pattern comuni (plurali, terminazioni italiane), sottostringhe condivise, e variazioni tipografiche.</p>
                   </div>
                 </div>
 
@@ -1314,6 +1281,141 @@
                             <li><kbd>Tab</kbd> per spostarsi tra campi</li>
                             <li><kbd>Ctrl/Cmd + S</kbd> → salva tutto</li>
                           </ol>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- JSON Editor Tab -->
+                <div class="tab-pane fade" id="help-jsoneditor" role="tabpanel">
+                  <h4><i class="fas fa-table me-2 text-info"></i>Editor JSON Avanzato</h4>
+                  <p class="lead">Un editor tabellare professionale per gestire grandi quantità di dati con funzionalità avanzate di filtraggio, ordinamento e modifica in massa.</p>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong><i class="fas fa-rocket me-2"></i>Caratteristiche Principali</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Vista Tabellare:</strong> Visualizzazione a griglia di tutti i dati</li>
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Modifica Inline:</strong> Editing diretto nelle celle</li>
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Auto-save:</strong> Salvataggio automatico dopo 2 secondi</li>
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Validazione Real-time:</strong> Controllo immediato dei dati</li>
+                          </ul>
+                        </div>
+                        <div class="col-md-6">
+                          <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Filtri Avanzati:</strong> Ricerca globale e per colonna</li>
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Ordinamento:</strong> Sorting per qualsiasi colonna</li>
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Selezione Multipla:</strong> Operazioni in massa</li>
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Monitoraggio:</strong> Sincronizzazione automatica</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong><i class="fas fa-play me-2"></i>Come Iniziare</strong></div>
+                    <div class="card-body">
+                      <ol class="mb-0">
+                        <li><strong>Accedi all'Editor JSON</strong> cliccando l'icona tabella nella barra di navigazione</li>
+                        <li><strong>Esplora i Dati</strong> utilizzando la vista tabellare con paginazione</li>
+                        <li><strong>Filtra</strong> usando la barra di ricerca globale o i filtri per colonna</li>
+                        <li><strong>Modifica</strong> cliccando direttamente su una cella per editarla</li>
+                        <li><strong>Salva</strong> automaticamente o manualmente con Ctrl+S</li>
+                      </ol>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong><i class="fas fa-filter me-2"></i>Filtri e Ricerca</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6><i class="fas fa-search me-2 text-primary"></i>Ricerca Globale</h6>
+                          <p>Cerca in tutti i campi contemporaneamente usando la barra di ricerca principale. Supporta:</p>
+                          <ul>
+                            <li>Testo parziale e parole chiave</li>
+                            <li>Ricerca case-insensitive</li>
+                            <li>Aggiornamento real-time durante la digitazione</li>
+                          </ul>
+                        </div>
+                        <div class="col-md-6">
+                          <h6><i class="fas fa-columns me-2 text-primary"></i>Filtri per Colonna</h6>
+                          <p>Usa i controlli specifici per ogni colonna:</p>
+                          <ul>
+                            <li>Dropdown per campi con valori limitati</li>
+                            <li>Input di testo per ricerche specifiche</li>
+                            <li>Combinazione di filtri multipli</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong><i class="fas fa-edit me-2"></i>Modifica e Validazione</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6><i class="fas fa-mouse-pointer me-2 text-warning"></i>Editing Inline</h6>
+                          <ul>
+                            <li>Click su una cella per attivarla</li>
+                            <li>Inserisci il nuovo valore</li>
+                            <li>Premi Invio o Tab per confermare</li>
+                            <li>Esc per annullare</li>
+                          </ul>
+                        </div>
+                        <div class="col-md-6">
+                          <h6><i class="fas fa-shield-alt me-2 text-danger"></i>Validazione</h6>
+                          <ul>
+                            <li>Controllo automatico del formato</li>
+                            <li>Evidenziazione errori in rosso</li>
+                            <li>Tooltip informativi sui problemi</li>
+                            <li>Prevenzione salvataggio dati errati</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card">
+                    <div class="card-header"><strong><i class="fas fa-keyboard me-2"></i>Scorciatoie Specifiche</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <table class="table table-sm">
+                            <thead>
+                              <tr>
+                                <th>Tasto</th>
+                                <th>Azione</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr><td><kbd>Ctrl/Cmd + S</kbd></td><td>Salva modifiche</td></tr>
+                              <tr><td><kbd>Ctrl/Cmd + F</kbd></td><td>Focalizza ricerca</td></tr>
+                              <tr><td><kbd>Invio</kbd></td><td>Conferma modifica</td></tr>
+                              <tr><td><kbd>Tab</kbd></td><td>Prossima cella</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="col-md-6">
+                          <table class="table table-sm">
+                            <thead>
+                              <tr>
+                                <th>Tasto</th>
+                                <th>Azione</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr><td><kbd>Esc</kbd></td><td>Annulla modifica</td></tr>
+                              <tr><td><kbd>Shift + Tab</kbd></td><td>Cella precedente</td></tr>
+                              <tr><td><kbd>↑↓</kbd></td><td>Naviga righe</td></tr>
+                              <tr><td><kbd>Ctrl/Cmd + A</kbd></td><td>Seleziona tutto</td></tr>
+                            </tbody>
+                          </table>
                         </div>
                       </div>
                     </div>
@@ -1568,7 +1670,7 @@
                 <div class="card-body text-center">
                   <i class="fab fa-youtube fa-2x text-danger mb-3"></i>
                   <h6>Importa da YouTube</h6>
-                  <p class="small text-muted mb-0">Importa video o playlist da YouTube</p>
+                  <p class="small text-muted mb-0">Importa video singoli o playlist complete</p>
                 </div>
               </div>
             </div>

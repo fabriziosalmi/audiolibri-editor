@@ -6,6 +6,7 @@ const axios = require('axios');
 const { Octokit } = require('octokit');
 const YTDlpWrap = require('yt-dlp-wrap').default;
 const { v4: uuidv4 } = require('uuid');
+const { rateLimiters, securityHeaders, corsOptions, requestLogger, sanitizeInput, errorHandler } = require('./middleware/security');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,8 +21,13 @@ try {
 }
 
 // Configure middleware
+app.use(securityHeaders);
+app.use(corsOptions);
+app.use(requestLogger);
+app.use(rateLimiters.general);
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+app.use(sanitizeInput);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize Octokit with GitHub token
@@ -60,7 +66,7 @@ app.get('/health', (req, res) => {
 });
 
 // API endpoint to fetch the JSON data
-app.get('/api/data', async (req, res) => {
+app.get('/api/data', rateLimiters.api, async (req, res) => {
   try {
     const response = await axios.get('https://raw.githubusercontent.com/fabriziosalmi/audiolibri/refs/heads/main/augmented.json');
     res.json(response.data);
@@ -71,7 +77,7 @@ app.get('/api/data', async (req, res) => {
 });
 
 // API endpoint to get data hash for monitoring changes
-app.get('/api/data-hash', async (req, res) => {
+app.get('/api/data-hash', rateLimiters.api, async (req, res) => {
   try {
     const response = await axios.get('https://raw.githubusercontent.com/fabriziosalmi/audiolibri/refs/heads/main/augmented.json');
     const data = response.data;
@@ -157,7 +163,7 @@ app.get('/api/search', async (req, res) => {
 });
 
 // API endpoint to submit changes and create a pull request
-app.post('/api/submit', async (req, res) => {
+app.post('/api/submit', rateLimiters.github, async (req, res) => {
   try {
     const { changes, branchName, commitMessage, prTitle, prDescription } = req.body;
     
@@ -374,7 +380,7 @@ app.post('/api/submit', async (req, res) => {
 });
 
 // YouTube import endpoints
-app.post('/api/import/video', async (req, res) => {
+app.post('/api/import/video', rateLimiters.import, async (req, res) => {
   try {
     const { url, contentType, language, genre, processed } = req.body;
     
@@ -457,7 +463,7 @@ app.post('/api/import/video', async (req, res) => {
   }
 });
 
-app.post('/api/import/playlist', async (req, res) => {
+app.post('/api/import/playlist', rateLimiters.import, async (req, res) => {
   try {
     const { url, contentType, language, genre, processed, createSeries } = req.body;
     
@@ -721,6 +727,9 @@ Revisiona attentamente le modifiche prima del merge.`;
     });
   }
 });
+
+// Add error handling middleware at the end
+app.use(errorHandler);
 
 // Start the server
 app.listen(PORT, () => {

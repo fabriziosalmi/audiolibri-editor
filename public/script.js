@@ -21,7 +21,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const successModal = new bootstrap.Modal(document.getElementById('successModal'));
   const bulkEditModal = new bootstrap.Modal(document.getElementById('bulkEditModal'));
   const exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
-  const importModal = new bootstrap.Modal(document.getElementById('importModal'));
+  const importSingleModal = new bootstrap.Modal(document.getElementById('importSingleModal'));
+  const importPlaylistModal = new bootstrap.Modal(document.getElementById('importPlaylistModal'));
   const genreManagementModal = new bootstrap.Modal(document.getElementById('genreManagementModal'));
   const mergeGenresModal = new bootstrap.Modal(document.getElementById('mergeGenresModal'));
   
@@ -31,11 +32,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const downloadExportBtn = document.getElementById('downloadExportBtn');
 
   // Import elements
-  const importBtn = document.getElementById('importBtn');
   const importSingleVideoBtn = document.getElementById('importSingleVideoBtn');
-  const importPlaylistBtn = document.getElementById('importPlaylistBtn');
-  const importProgress = document.getElementById('importProgress');
-  const importStatus = document.getElementById('importStatus');
+  const importPlaylistVideoBtn = document.getElementById('importPlaylistVideoBtn');
+  const singleImportProgress = document.getElementById('singleImportProgress');
+  const singleImportStatus = document.getElementById('singleImportStatus');
+  const playlistImportProgress = document.getElementById('playlistImportProgress');
+  const playlistImportStatus = document.getElementById('playlistImportStatus');
 
   // Statistics elements
   const totalItems = document.getElementById('totalItems');
@@ -61,6 +63,14 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentPage = 1;
   let itemsPerPageValue = 20;
   let undoStack = [];
+  
+  // Safely initialize changedItems from localStorage
+  try {
+    changedItems = JSON.parse(localStorage.getItem('changedItems') || '{}');
+  } catch (error) {
+    console.error('Error parsing changedItems from localStorage:', error);
+    changedItems = {};
+  }
   
   // Make variables globally available for genre management
   window.allData = allData;
@@ -99,108 +109,32 @@ document.addEventListener('DOMContentLoaded', function() {
   exportBtn.addEventListener('click', openExportModal);
   // Note: genreManagementBtn listener is in genre-management.js to avoid conflicts
   
-  // Enhanced FAB and Quick Actions functionality
-  const quickActionsFab = document.getElementById('quickActionsFab');
-  const quickActionsPanel = document.getElementById('quickActionsPanel');
-  let isQuickActionsOpen = false;
-
-  // Toggle quick actions panel
-  quickActionsFab.addEventListener('click', function(e) {
-    e.stopPropagation();
-    toggleQuickActions();
-  });
-
-  function toggleQuickActions() {
-    isQuickActionsOpen = !isQuickActionsOpen;
-    
-    if (isQuickActionsOpen) {
-      quickActionsPanel.style.display = 'block';
-      setTimeout(() => {
-        quickActionsPanel.classList.add('show');
-        quickActionsFab.classList.add('active');
-      }, 10);
-    } else {
-      quickActionsPanel.classList.remove('show');
-      quickActionsFab.classList.remove('active');
-      setTimeout(() => {
-        if (!isQuickActionsOpen) {
-          quickActionsPanel.style.display = 'none';
-        }
-      }, 300);
-    }
-  }
-
-  // Close quick actions when clicking outside
-  document.addEventListener('click', function(e) {
-    if (isQuickActionsOpen && 
-        !quickActionsPanel.contains(e.target) && 
-        !quickActionsFab.contains(e.target)) {
-      toggleQuickActions();
-    }
-  });
-
-  // Quick action buttons with navigation integration
-  document.getElementById('quickImportBtn').addEventListener('click', () => {
-    importModal.show();
-    // Close quick actions panel on mobile
-    if (window.innerWidth < 992 && isQuickActionsOpen) {
-      toggleQuickActions();
-    }
-  });
-  // Note: quickGenreBtn listener is in genre-management.js to avoid conflicts
-  document.getElementById('quickBulkEditBtn').addEventListener('click', () => {
-    openBulkEditModal();
-    if (window.innerWidth < 992 && isQuickActionsOpen) {
-      toggleQuickActions();
-    }
-  });
-  document.getElementById('quickExportBtn').addEventListener('click', () => {
-    openExportModal();
-    if (window.innerWidth < 992 && isQuickActionsOpen) {
-      toggleQuickActions();
-    }
-  });
-  document.getElementById('quickSaveBtn').addEventListener('click', () => {
-    openPrModal();
-    if (window.innerWidth < 992 && isQuickActionsOpen) {
-      toggleQuickActions();
-    }
-  });
-  document.getElementById('quickHelpBtn').addEventListener('click', () => {
-    const helpModal = new bootstrap.Modal(document.getElementById('helpModal'));
-    helpModal.show();
-    if (window.innerWidth < 992 && isQuickActionsOpen) {
-      toggleQuickActions();
-    }
-  });
-  
-  // Quick search functionality
-  document.getElementById('quickSearchBtn')?.addEventListener('click', function() {
-    toggleQuickActions();
-    setTimeout(() => {
-      searchInput.focus();
-      searchInput.select();
-    }, 100);
-  });
-  
   submitPrBtn.addEventListener('click', submitChanges);
   applyBulkEditBtn.addEventListener('click', applyBulkEdit);
   downloadExportBtn.addEventListener('click', downloadExport);
 
-  // Import event listeners
-  importSingleVideoBtn.addEventListener('click', importSingleVideo);
-  importPlaylistBtn.addEventListener('click', importPlaylist);
-  
-  // Import tab switching
-  document.getElementById('single-video-tab').addEventListener('shown.bs.tab', function () {
-    importSingleVideoBtn.style.display = 'inline-block';
-    importPlaylistBtn.style.display = 'none';
-  });
-  
-  document.getElementById('playlist-tab').addEventListener('shown.bs.tab', function () {
-    importSingleVideoBtn.style.display = 'none';
-    importPlaylistBtn.style.display = 'inline-block';
-  });
+  // Import event listeners with validation
+  if (importSingleVideoBtn) {
+    importSingleVideoBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (!validateImportForm('singleVideoForm')) {
+        showToast('Compila tutti i campi obbligatori', 'warning');
+        return;
+      }
+      importSingleVideo();
+    });
+  }
+
+  if (importPlaylistVideoBtn) {
+    importPlaylistVideoBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (!validateImportForm('playlistForm')) {
+        showToast('Compila tutti i campi obbligatori', 'warning');
+        return;
+      }
+      importPlaylist();
+    });
+  }
 
   // YouTube URL and thumbnail buttons
   document.getElementById('openYouTubeBtn').addEventListener('click', function() {
@@ -304,6 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
         populateGenreFilter();
         populateGenreDropdown();
         updateStatistics();
+        updateSaveChangesBtn(); // Update save button based on existing changes
         renderItems(data);
         
         showToast(`${Object.keys(data).length} elementi caricati con successo!`, 'success');
@@ -315,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <i class="fas fa-exclamation-triangle mb-2"></i>
             <p>Errore nel caricamento dei dati: ${error.message}</p>
             <button class="btn btn-outline-primary btn-sm" onclick="fetchData()">
-              <i class="fas fa-retry me-1"></i>Riprova
+              <i class="fas fa-redo me-1"></i>Riprova
             </button>
           </div>
         `;
@@ -390,6 +325,12 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
+    // Input validation - prevent potentially harmful characters
+    if (query.length > 200) {
+      showToast('Query di ricerca troppo lunga. Massimo 200 caratteri.', 'warning');
+      return;
+    }
+    
     // Show searching message
     itemsList.innerHTML = `
       <div class="list-group-item text-center py-3">
@@ -408,9 +349,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return response.json();
       })
       .then(data => {
+        if (!data || typeof data !== 'object') {
+          throw new Error('Invalid search response format');
+        }
+        
         filteredData = data;
         currentPage = 1;
         renderItems(data);
+        
+        const resultCount = Object.keys(data).length;
+        showToast(`Trovati ${resultCount} risultati per "${query}"`, resultCount > 0 ? 'info' : 'warning');
       })
       .catch(error => {
         console.error('Errore durante la ricerca:', error);
@@ -420,6 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
             Errore durante la ricerca: ${error.message}
           </div>
         `;
+        showToast('Errore durante la ricerca. Riprova più tardi.', 'danger');
       });
   }
 
@@ -472,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalItems = Object.keys(data).length;
     
     if (totalItems === 0) {
-      itemsList.innerHTML = `<div class="list-group-item"><i class="fas fa-info-circle me-2"></i>Nessun elemento trovato</div>`;
+      itemsList.innerHTML = `<div class="list-group-item" role="status" aria-live="polite"><i class="fas fa-info-circle me-2"></i>Nessun elemento trovato</div>`;
       itemsCount.textContent = '0';
       document.getElementById('pagination').innerHTML = '';
       return;
@@ -506,17 +455,25 @@ document.addEventListener('DOMContentLoaded', function() {
       const itemElement = document.createElement('a');
       itemElement.href = '#';
       itemElement.className = `list-group-item list-group-item-action ${currentItemId === id ? 'active' : ''} ${isSelected ? 'bulk-selected' : ''}`;
+      itemElement.setAttribute('role', 'button');
+      itemElement.setAttribute('tabindex', '0');
+      itemElement.setAttribute('aria-describedby', `item-${id}-description`);
+      
+      const title = item.real_title || item.title || 'Nessun Titolo';
+      const author = item.real_author || 'Autore Sconosciuto';
+      const genre = item.real_genre || 'Genere Sconosciuto';
+      
       itemElement.innerHTML = `
         <div class="bulk-select-checkbox">
-          <input type="checkbox" class="form-check-input" ${isSelected ? 'checked' : ''} data-item-id="${id}">
+          <input type="checkbox" class="form-check-input" ${isSelected ? 'checked' : ''} data-item-id="${id}" aria-label="Seleziona ${title}">
         </div>
         <div class="d-flex w-100 justify-content-between">
-          <h6 class="mb-1">${item.real_title || item.title || 'Nessun Titolo'}</h6>
+          <h6 class="mb-1">${title}</h6>
           ${isChanged ? '<span class="badge bg-warning text-dark changes-badge"><i class="fas fa-pen-fancy me-1"></i>Modificato</span>' : ''}
         </div>
-        <p class="mb-1">${item.real_author || 'Autore Sconosciuto'}</p>
-        <div class="d-flex justify-content-between align-items-center">
-          <small class="text-muted">${item.real_genre || 'Genere Sconosciuto'}</small>
+        <p class="mb-1">${author}</p>
+        <div class="d-flex justify-content-between align-items-center" id="item-${id}-description">
+          <small class="text-muted">${genre}</small>
           ${item.processed ? '<span class="badge badge-processed-true">Processato</span>' : '<span class="badge badge-processed-false">Non Processato</span>'}
         </div>
       `;
@@ -524,6 +481,14 @@ document.addEventListener('DOMContentLoaded', function() {
       // Add click handler for item selection (not checkbox)
       itemElement.addEventListener('click', function(e) {
         if (e.target.type !== 'checkbox') {
+          e.preventDefault();
+          selectItem(id);
+        }
+      });
+      
+      // Add keyboard navigation
+      itemElement.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           selectItem(id);
         }
@@ -689,14 +654,14 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       
       const formData = sanitizeObject({
-        real_title: document.getElementById('realTitle').value.trim(),
-        real_author: document.getElementById('realAuthor').value.trim(),
-        real_genre: document.getElementById('realGenre').value.trim(),
-        content_type: document.getElementById('realContentType').value,
-        real_language: document.getElementById('realLanguage').value,
-        real_synopsis: document.getElementById('realSynopsis').value.trim(),
-        real_published_year: document.getElementById('realPublishedYear').value ? parseInt(document.getElementById('realPublishedYear').value) : null,
-        real_narrator: document.getElementById('realNarrator').value.trim()
+        real_title: document.getElementById('realTitle')?.value?.trim() || '',
+        real_author: document.getElementById('realAuthor')?.value?.trim() || '',
+        real_genre: document.getElementById('realGenre')?.value?.trim() || '',
+        content_type: document.getElementById('realContentType')?.value || '',
+        real_language: document.getElementById('realLanguage')?.value || '',
+        real_synopsis: document.getElementById('realSynopsis')?.value?.trim() || '',
+        real_published_year: document.getElementById('realPublishedYear')?.value ? parseInt(document.getElementById('realPublishedYear').value) : null,
+        real_narrator: document.getElementById('realNarrator')?.value?.trim() || ''
         // Note: Removed readonly fields: processed, audio_file, summary, transcript
       });
       
@@ -729,11 +694,33 @@ document.addEventListener('DOMContentLoaded', function() {
         changedItems[currentItemId] = {};
       }
       
+      // Get current item title for change history
+      const itemTitle = allData[currentItemId].real_title || allData[currentItemId].title || `Elemento ${currentItemId}`;
+      
+      // Load existing change history
+      let changeHistory = JSON.parse(localStorage.getItem('changeHistory') || '[]');
+      
       Object.keys(formData).forEach(key => {
         if (formData[key] !== previousData[key]) {
           changedItems[currentItemId][key] = formData[key];
+          
+          // Add to change history for edit log
+          const changeId = `${currentItemId}_${key}_${Date.now()}`;
+          changeHistory.push({
+            id: changeId,
+            itemId: currentItemId,
+            itemTitle: itemTitle,
+            field: key,
+            oldValue: previousData[key] || '',
+            newValue: formData[key] || '',
+            timestamp: new Date().toISOString()
+          });
         }
       });
+      
+      // Update localStorage for edit log integration
+      safeLocalStorageSet('changedItems', changedItems);
+      safeLocalStorageSet('changeHistory', changeHistory);
       
       // Update global reference
       window.changedItems = changedItems;
@@ -754,18 +741,51 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  // Form validation for import modals
+  function validateImportForm(formId) {
+    const form = document.getElementById(formId);
+    if (!form) return false;
+    
+    const requiredFields = form.querySelectorAll('[required]');
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+      field.classList.remove('is-invalid');
+      if (!field.value.trim()) {
+        field.classList.add('is-invalid');
+        isValid = false;
+      }
+    });
+    
+    return isValid;
+  }
+
   function updateSaveChangesBtn() {
     const numChanges = Object.keys(changedItems).length;
     console.log('Updating save button - changes:', numChanges, changedItems);
     
-    saveChangesBtn.innerHTML = numChanges > 0 ? 
-      `<i class="fas fa-save me-1"></i>Salva Modifiche (${numChanges})` : 
-      '<i class="fas fa-save me-1"></i>Salva Modifiche';
+    // Update button styling based on changes count
     saveChangesBtn.classList.toggle('btn-warning', numChanges > 0);
     saveChangesBtn.classList.toggle('btn-outline-light', numChanges === 0);
     
     // Enable/disable the button based on changes
     saveChangesBtn.disabled = numChanges === 0;
+    
+    // Update the changes indicator visibility
+    const changesIndicator = document.getElementById('changesIndicator');
+    if (changesIndicator) {
+      changesIndicator.style.display = numChanges > 0 ? 'inline' : 'none';
+    }
+    
+    // Update tooltip to show changes count (using custom tooltip system only)
+    if (numChanges > 0) {
+      saveChangesBtn.setAttribute('data-tooltip', `Salva Modifiche (${numChanges})`);
+    } else {
+      saveChangesBtn.setAttribute('data-tooltip', 'Salva Modifiche');
+    }
+    
+    // Remove any native title attribute to prevent duplicate tooltips
+    saveChangesBtn.removeAttribute('title');
   }
 
   function openPrModal() {
@@ -889,8 +909,10 @@ document.addEventListener('DOMContentLoaded', function() {
         prLink.innerHTML = '<i class="fab fa-github me-1"></i>Visualizza PR';
         successModal.show();
         
-        // Reset the changed items
+        // Reset the changed items with localStorage cleanup
         changedItems = {};
+        safeLocalStorageSet('changedItems', {});
+        safeLocalStorageSet('changeHistory', []);
         updateSaveChangesBtn();
         
         // Update UI to reflect saved state
@@ -904,7 +926,23 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch(error => {
       console.error('Errore durante l\'invio delle modifiche:', error);
-      showToast('Errore durante l\'invio delle modifiche: ' + error.message, 'danger');
+      
+      // Provide more specific error messages based on error type
+      let errorMessage = 'Errore durante l\'invio delle modifiche: ';
+      
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage += 'Problema di connessione. Verifica la tua connessione internet.';
+      } else if (error.message.includes('500')) {
+        errorMessage += 'Errore del server. Riprova più tardi.';
+      } else if (error.message.includes('401')) {
+        errorMessage += 'Errore di autenticazione. Verifica le credenziali GitHub.';
+      } else if (error.message.includes('403')) {
+        errorMessage += 'Accesso negato. Verifica i permessi del repository.';
+      } else {
+        errorMessage += error.message;
+      }
+      
+      showToast(errorMessage, 'danger');
       
       // Reset the submit button
       submitPrBtn.disabled = false;
@@ -920,42 +958,70 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (totalPages <= 1) return;
     
+    // Helper function to create pagination button
+    function createPageButton(page, text, isActive = false, isDisabled = false) {
+      const button = document.createElement('button');
+      button.className = `btn btn-sm ${isActive ? 'btn-primary' : 'btn-outline-primary'} ${isDisabled ? 'disabled' : ''}`;
+      button.innerHTML = text;
+      button.style.minWidth = '32px';
+      button.style.height = '32px';
+      
+      if (!isDisabled && !isActive) {
+        button.addEventListener('click', () => {
+          currentPage = page;
+          renderItems(filteredData);
+        });
+      }
+      
+      return button;
+    }
+    
     // Previous button
     if (currentPage > 1) {
-      const prevButton = document.createElement('button');
-      prevButton.className = 'btn btn-outline-primary btn-sm me-1';
-      prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
-      prevButton.addEventListener('click', () => {
-        currentPage--;
-        renderItems(filteredData);
-      });
+      const prevButton = createPageButton(currentPage - 1, '<i class="fas fa-chevron-left"></i>');
       paginationContainer.appendChild(prevButton);
     }
     
-    // Page numbers
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
+    // Page numbers - show fewer pages in narrow column
+    const maxVisiblePages = 3; // Reduced from 5 for narrow space
+    const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
     
+    // Show first page if not in range
+    if (startPage > 1) {
+      paginationContainer.appendChild(createPageButton(1, '1'));
+      if (startPage > 2) {
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'btn btn-sm btn-outline-secondary disabled';
+        ellipsis.innerHTML = '...';
+        ellipsis.style.minWidth = '32px';
+        ellipsis.style.height = '32px';
+        paginationContainer.appendChild(ellipsis);
+      }
+    }
+    
+    // Page numbers in range
     for (let i = startPage; i <= endPage; i++) {
-      const pageButton = document.createElement('button');
-      pageButton.className = `btn btn-sm me-1 ${i === currentPage ? 'btn-primary' : 'btn-outline-primary'}`;
-      pageButton.textContent = i;
-      pageButton.addEventListener('click', () => {
-        currentPage = i;
-        renderItems(filteredData);
-      });
-      paginationContainer.appendChild(pageButton);
+      const isActive = i === currentPage;
+      paginationContainer.appendChild(createPageButton(i, i.toString(), isActive));
+    }
+    
+    // Show last page if not in range
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'btn btn-sm btn-outline-secondary disabled';
+        ellipsis.innerHTML = '...';
+        ellipsis.style.minWidth = '32px';
+        ellipsis.style.height = '32px';
+        paginationContainer.appendChild(ellipsis);
+      }
+      paginationContainer.appendChild(createPageButton(totalPages, totalPages.toString()));
     }
     
     // Next button
     if (currentPage < totalPages) {
-      const nextButton = document.createElement('button');
-      nextButton.className = 'btn btn-outline-primary btn-sm ms-1';
-      nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
-      nextButton.addEventListener('click', () => {
-        currentPage++;
-        renderItems(filteredData);
-      });
+      const nextButton = createPageButton(currentPage + 1, '<i class="fas fa-chevron-right"></i>');
       paginationContainer.appendChild(nextButton);
     }
   }
@@ -974,43 +1040,85 @@ document.addEventListener('DOMContentLoaded', function() {
     let changesCount = 0;
     const selectedItemsCount = selectedItems.size; // Store count before clearing
     
-    selectedItems.forEach(itemId => {
-      const updates = {};
-      
-      if (bulkGenre) {
-        updates.real_genre = bulkGenre;
-        changesCount++;
-      }
-      
-      if (bulkLanguage) {
-        updates.real_language = bulkLanguage;
-        changesCount++;
-      }
-      
-      if (bulkProcessed !== null) {
-        updates.processed = bulkProcessed === 'true';
-        changesCount++;
-      }
-      
-      if (Object.keys(updates).length > 0) {
-        // Apply updates to local data
-        allData[itemId] = { ...allData[itemId], ...updates };
+    // Load existing change history for bulk operations
+    let changeHistory = JSON.parse(localStorage.getItem('changeHistory') || '[]');
+    
+    try {
+      selectedItems.forEach(itemId => {
+        if (!allData[itemId]) {
+          console.warn(`Item with ID ${itemId} not found in allData`);
+          return;
+        }
         
-        // Track changes
-        changedItems[itemId] = { ...changedItems[itemId], ...updates };
-      }
-    });
-    
-    // Update UI
-    updateStatistics();
-    renderItems(filteredData);
-    updateSaveChangesBtn();
-    
-    // Close modal and clear selections
-    bulkEditModal.hide();
-    selectedItems.clear();
-    
-    showToast(`Modifiche applicate a ${selectedItemsCount} elementi`, 'success');
+        const updates = {};
+        const previousData = { ...allData[itemId] };
+        const itemTitle = allData[itemId].real_title || allData[itemId].title || `Elemento ${itemId}`;
+        
+        if (bulkGenre) {
+          updates.real_genre = bulkGenre;
+          changesCount++;
+        }
+        
+        if (bulkLanguage) {
+          updates.real_language = bulkLanguage;
+          changesCount++;
+        }
+        
+        if (bulkProcessed !== null) {
+          updates.processed = bulkProcessed === 'true';
+          changesCount++;
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          // Apply updates to local data
+          allData[itemId] = { ...allData[itemId], ...updates };
+          
+          // Track changes
+          if (!changedItems[itemId]) {
+            changedItems[itemId] = {};
+          }
+          changedItems[itemId] = { ...changedItems[itemId], ...updates };
+          
+          // Add to change history for edit log
+          Object.keys(updates).forEach(key => {
+            if (updates[key] !== previousData[key]) {
+              const changeId = `${itemId}_${key}_${Date.now()}_bulk`;
+              changeHistory.push({
+                id: changeId,
+                itemId: itemId,
+                itemTitle: itemTitle,
+                field: key,
+                oldValue: previousData[key] || '',
+                newValue: updates[key] || '',
+                timestamp: new Date().toISOString()
+              });
+            }
+          });
+        }
+      });
+      
+      // Update localStorage for edit log integration
+      safeLocalStorageSet('changedItems', changedItems);
+      safeLocalStorageSet('changeHistory', changeHistory);
+      
+      // Update global reference
+      window.changedItems = changedItems;
+      
+      // Update UI
+      updateStatistics();
+      renderItems(filteredData);
+      updateSaveChangesBtn();
+      
+      // Close modal and clear selections
+      bulkEditModal.hide();
+      selectedItems.clear();
+      
+      showToast(`Modifiche applicate a ${selectedItemsCount} elementi`, 'success');
+      
+    } catch (error) {
+      console.error('Error applying bulk edit:', error);
+      showToast('Errore durante l\'applicazione delle modifiche multiple: ' + error.message, 'danger');
+    }
   }
 
   function openBulkEditModal() {
@@ -1172,22 +1280,69 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function importSingleVideo() {
-    const url = document.getElementById('singleVideoUrl').value.trim();
+    const url = document.getElementById('singleVideoUrl')?.value?.trim();
+    const contentType = document.getElementById('singleVideoType')?.value;
+    const language = document.getElementById('singleVideoLanguage')?.value;
+    const genre = document.getElementById('singleVideoGenre')?.value?.trim();
+    const processed = document.getElementById('singleVideoProcessed')?.checked || false;
+    
     if (!url) {
-      alert('Inserisci un URL YouTube valido.');
+      showToast('Inserisci un URL YouTube valido.', 'warning');
       return;
     }
     
+    // Basic YouTube URL validation
+    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+      showToast('L\'URL inserito non sembra essere un link YouTube valido.', 'warning');
+      return;
+    }
+    
+    if (!contentType) {
+      showToast('Seleziona il tipo di contenuto.', 'warning');
+      return;
+    }
+    
+    if (!language) {
+      showToast('Seleziona la lingua del contenuto.', 'warning');
+      return;
+    }
+    
+    // Show progress
+    if (singleImportProgress) {
+      singleImportProgress.style.display = 'block';
+    }
+    if (singleImportStatus) {
+      singleImportStatus.textContent = 'Connessione a YouTube...';
+    }
+    
     // Disable button and show loading
-    importSingleVideoBtn.disabled = true;
-    importSingleVideoBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Importazione...';
+    if (importSingleVideoBtn) {
+      importSingleVideoBtn.disabled = true;
+      importSingleVideoBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Importazione...';
+    }
+    
+    const importData = {
+      url: url,
+      content_type: contentType,
+      language: language,
+      processed: processed
+    };
+    
+    if (genre) {
+      importData.genre = genre;
+    }
     
     fetch('/api/import/video', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
+      body: JSON.stringify(importData)
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    })
     .then(data => {
       if (data.success) {
         // Add new item to local data
@@ -1197,11 +1352,15 @@ document.addEventListener('DOMContentLoaded', function() {
         updateStatistics();
         renderItems(filteredData);
         
-        importModal.hide();
+        importSingleModal.hide();
         showToast('Video importato con successo!', 'success');
         
-        // Clear input
+        // Clear form
         document.getElementById('singleVideoUrl').value = '';
+        document.getElementById('singleVideoType').value = '';
+        document.getElementById('singleVideoLanguage').value = '';
+        document.getElementById('singleVideoGenre').value = '';
+        document.getElementById('singleVideoProcessed').checked = false;
       } else {
         throw new Error(data.error || 'Errore durante l\'importazione');
       }
@@ -1211,29 +1370,71 @@ document.addEventListener('DOMContentLoaded', function() {
       showToast('Errore durante l\'importazione: ' + error.message, 'danger');
     })
     .finally(() => {
-      // Reset button
+      // Reset button and hide progress
       importSingleVideoBtn.disabled = false;
-      importSingleVideoBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Importa Video';
+      importSingleVideoBtn.innerHTML = '<i class="fas fa-download me-1"></i>Importa Video';
+      singleImportProgress.style.display = 'none';
     });
   }
 
   function importPlaylist() {
     const url = document.getElementById('playlistUrl').value.trim();
+    const contentType = document.getElementById('playlistType').value;
+    const language = document.getElementById('playlistLanguage').value;
+    const genre = document.getElementById('playlistGenre').value.trim();
+    const processed = document.getElementById('playlistProcessed').checked;
+    const createSeries = document.getElementById('createSeries').checked;
+    const reverseOrder = document.getElementById('reverseOrder').checked;
+    
     if (!url) {
-      alert('Inserisci un URL playlist YouTube valido.');
+      showToast('Inserisci un URL playlist YouTube valido.', 'warning');
       return;
     }
     
+    if (!contentType) {
+      showToast('Seleziona il tipo di contenuto.', 'warning');
+      return;
+    }
+    
+    if (!language) {
+      showToast('Seleziona la lingua del contenuto.', 'warning');
+      return;
+    }
+    
+    // Show progress
+    playlistImportProgress.style.display = 'block';
+    playlistImportStatus.textContent = 'Connessione a YouTube e analisi playlist...';
+    document.getElementById('importedCount').textContent = '0';
+    document.getElementById('totalCount').textContent = '?';
+    
     // Disable button and show loading
-    importPlaylistBtn.disabled = true;
-    importPlaylistBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Importazione...';
+    importPlaylistVideoBtn.disabled = true;
+    importPlaylistVideoBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Importazione...';
+    
+    const importData = {
+      url: url,
+      content_type: contentType,
+      language: language,
+      processed: processed,
+      create_series: createSeries,
+      reverse_order: reverseOrder
+    };
+    
+    if (genre) {
+      importData.genre = genre;
+    }
     
     fetch('/api/import/playlist', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
+      body: JSON.stringify(importData)
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    })
     .then(data => {
       if (data.success) {
         // Add new items to local data
@@ -1243,11 +1444,17 @@ document.addEventListener('DOMContentLoaded', function() {
         updateStatistics();
         renderItems(filteredData);
         
-        importModal.hide();
+        importPlaylistModal.hide();
         showToast(`${Object.keys(data.items).length} video importati dalla playlist!`, 'success');
         
-        // Clear input
+        // Clear form
         document.getElementById('playlistUrl').value = '';
+        document.getElementById('playlistType').value = '';
+        document.getElementById('playlistLanguage').value = '';
+        document.getElementById('playlistGenre').value = '';
+        document.getElementById('playlistProcessed').checked = false;
+        document.getElementById('createSeries').checked = true;
+        document.getElementById('reverseOrder').checked = false;
       } else {
         throw new Error(data.error || 'Errore durante l\'importazione');
       }
@@ -1257,9 +1464,10 @@ document.addEventListener('DOMContentLoaded', function() {
       showToast('Errore durante l\'importazione: ' + error.message, 'danger');
     })
     .finally(() => {
-      // Reset button
-      importPlaylistBtn.disabled = false;
-      importPlaylistBtn.innerHTML = '<i class="fas fa-list me-1"></i>Importa Playlist';
+      // Reset button and hide progress
+      importPlaylistVideoBtn.disabled = false;
+      importPlaylistVideoBtn.innerHTML = '<i class="fas fa-download me-1"></i>Importa Playlist';
+      playlistImportProgress.style.display = 'none';
     });
   }
 
@@ -1379,10 +1587,67 @@ document.addEventListener('DOMContentLoaded', function() {
     showToast('Form ripristinato ai valori originali', 'success');
   }
 
-  function validateField(event) {
-    const field = event.target;
-    const value = field.value.trim();
-    const fieldName = field.name || field.id;
+  // Enhanced form reset with error state clearing
+  function resetFormWithValidation() {
+    if (!currentItemId) return;
+    
+    try {
+      // Get the original item data
+      const item = allData[currentItemId];
+      
+      if (!item) {
+        showToast('Elemento non trovato. Impossibile ripristinare i dati.', 'danger');
+        return;
+      }
+      
+      // Clear all validation states before resetting
+      const formElements = document.querySelectorAll('#editForm .form-control, #editForm .form-select');
+      formElements.forEach(element => {
+        element.classList.remove('is-valid', 'is-invalid');
+      });
+      
+      // Remove all feedback messages
+      const feedbacks = document.querySelectorAll('#editForm .invalid-feedback, #editForm .valid-feedback');
+      feedbacks.forEach(feedback => feedback.remove());
+      
+      // Reset form fields with null checks
+      const fieldMappings = [
+        { id: 'realTitle', value: item.real_title || '' },
+        { id: 'realAuthor', value: item.real_author || '' },
+        { id: 'realGenre', value: item.real_genre || '' },
+        { id: 'realContentType', value: item.content_type || '' },
+        { id: 'realLanguage', value: item.real_language || '' },
+        { id: 'realSynopsis', value: item.real_synopsis || '' },
+        { id: 'realPublishedYear', value: item.real_published_year || '' },
+        { id: 'realNarrator', value: item.real_narrator || '' }
+      ];
+      
+      fieldMappings.forEach(({ id, value }) => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.value = value;
+        }
+      });
+      
+      // Update character count
+      updateCharacterCount();
+      
+      showToast('Form ripristinato ai valori originali', 'success');
+      
+    } catch (error) {
+      console.error('Error resetting form:', error);
+      showToast('Errore durante il ripristino del form: ' + error.message, 'danger');
+    }
+  }
+
+  // Enhanced validation with detailed feedback
+  function validateFormField(field) {
+    if (!field) return false;
+    
+    const value = field.value?.trim() || '';
+    const fieldId = field.id;
+    let isValid = true;
+    let message = '';
     
     // Remove existing feedback
     const existingFeedback = field.parentNode.querySelector('.invalid-feedback, .valid-feedback');
@@ -1392,12 +1657,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     field.classList.remove('is-valid', 'is-invalid');
     
-    let isValid = true;
-    let message = '';
-    
-    // Validation rules
-    switch (fieldName) {
-      case 'real_title':
+    // Field-specific validation
+    switch (fieldId) {
       case 'realTitle':
         if (field.hasAttribute('required') && !value) {
           isValid = false;
@@ -1405,10 +1666,12 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (value.length > 200) {
           isValid = false;
           message = 'Il titolo non può superare i 200 caratteri';
+        } else if (value.length < 2 && value.length > 0) {
+          isValid = false;
+          message = 'Il titolo deve contenere almeno 2 caratteri';
         }
         break;
         
-      case 'real_author':
       case 'realAuthor':
         if (field.hasAttribute('required') && !value) {
           isValid = false;
@@ -1419,15 +1682,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         break;
         
-      case 'real_published_year':
       case 'realPublishedYear':
-        if (value && (isNaN(value) || value < 1000 || value > new Date().getFullYear())) {
-          isValid = false;
-          message = 'Inserire un anno valido';
+        if (value) {
+          const year = parseInt(value);
+          const currentYear = new Date().getFullYear();
+          if (isNaN(year) || year < 1000 || year > currentYear + 1) {
+            isValid = false;
+            message = `Inserire un anno valido (1000-${currentYear + 1})`;
+          }
         }
         break;
         
-      case 'real_synopsis':
       case 'realSynopsis':
         if (value.length > 2000) {
           isValid = false;
@@ -1436,16 +1701,14 @@ document.addEventListener('DOMContentLoaded', function() {
         break;
     }
     
-    // Apply validation state
-    if (isValid) {
+    // Apply validation feedback
+    if (isValid && value) {
       field.classList.add('is-valid');
-      if (value) {
-        const feedback = document.createElement('div');
-        feedback.className = 'valid-feedback';
-        feedback.textContent = 'Valore valido';
-        field.parentNode.appendChild(feedback);
-      }
-    } else {
+      const feedback = document.createElement('div');
+      feedback.className = 'valid-feedback';
+      feedback.textContent = 'Campo valido';
+      field.parentNode.appendChild(feedback);
+    } else if (!isValid) {
       field.classList.add('is-invalid');
       const feedback = document.createElement('div');
       feedback.className = 'invalid-feedback';
@@ -1456,249 +1719,182 @@ document.addEventListener('DOMContentLoaded', function() {
     return isValid;
   }
 
+  // Debounced search for better performance
+  let searchTimeout;
+  function debouncedSearch(query, delay = 300) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      if (query.trim().length > 0) {
+        performSearch();
+      } else {
+        clearSearch();
+      }
+    }, delay);
+  }
+
+  // Enhanced search input handler
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      const query = this.value.trim();
+      
+      // Clear previous search results if input is empty
+      if (query === '') {
+        clearSearch();
+        return;
+      }
+      
+      // Validate query length
+      if (query.length > 200) {
+        showToast('Query di ricerca troppo lunga. Massimo 200 caratteri.', 'warning');
+        return;
+      }
+      
+      // Use debounced search for better performance
+      debouncedSearch(query);
+    });
+  }
+
+  // Form validation function
+  function validateField(event) {
+    const field = event.target;
+    return validateFormField(field);
+  }
+
+  // Character counter function
   function updateCharacterCount() {
-    const textarea = document.getElementById('realSynopsis');
-    const counter = document.getElementById('synopsisCount');
-    
-    if (textarea && counter) {
-      const currentLength = textarea.value.length;
+    if (synopsisTextarea && synopsisCount) {
+      const currentLength = synopsisTextarea.value.length;
       const maxLength = 2000;
-      
-      counter.textContent = `${currentLength}/${maxLength}`;
-      
-      // Update color based on length
-      counter.classList.remove('text-warning', 'text-danger');
-      if (currentLength > maxLength * 0.9) {
-        counter.classList.add('text-danger');
-      } else if (currentLength > maxLength * 0.8) {
-        counter.classList.add('text-warning');
-      }
+      synopsisCount.textContent = `${currentLength}/${maxLength}`;
+      synopsisCount.className = currentLength > maxLength ? 'text-danger' : 'text-muted';
     }
   }
 
-  function showToast(message, type = 'info') {
-    // Create toast element
-    const toastContainer = document.getElementById('toastContainer') || createToastContainer();
-    
-    const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type} border-0`;
-    toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
-    
-    toast.innerHTML = `
-      <div class="d-flex">
-        <div class="toast-body">
-          ${message}
-        </div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-    `;
-    
-    toastContainer.appendChild(toast);
-    
-    // Show toast
-    const bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
-    
-    // Remove toast after it's hidden
-    toast.addEventListener('hidden.bs.toast', () => {
-      toast.remove();
-    });
-  }
-
-  function createToastContainer() {
-    const container = document.createElement('div');
-    container.id = 'toastContainer';
-    container.className = 'toast-container position-fixed top-0 end-0 p-3';
-    container.style.zIndex = '9999';
-    document.body.appendChild(container);
-    return container;
-  }
-
-  function undoLastChange() {
-    if (undoStack.length === 0) return;
-    
-    const lastAction = undoStack.pop();
-    
-    if (lastAction.type === 'update' && lastAction.itemId) {
-      // Restore previous data
-      allData[lastAction.itemId] = lastAction.previousData;
-      
-      // Remove from changed items if it exists
-      if (changedItems[lastAction.itemId]) {
-        delete changedItems[lastAction.itemId];
-      }
-      
-      // Update UI if this item is currently selected
-      if (currentItemId === lastAction.itemId) {
-        selectItem(lastAction.itemId);
-      }
-      
-      // Update save button
-      updateSaveChangesBtn();
-      
-      // Update list display
-      renderItems(filteredData);
-      
-      showToast('Ultima modifica annullata', 'success');
+  // Network status handling
+  function handleNetworkStatus() {
+    if (!navigator.onLine) {
+      showToast('Connessione internet non disponibile. Alcune funzionalità potrebbero non funzionare.', 'warning');
     }
   }
 
-  // Initialize tooltips for better UX
-  function initializeTooltips() {
-    // Initialize Bootstrap tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-    
-    // Add custom tooltips to key elements
-    const elementsWithTooltips = [
-      { selector: '#searchInput', title: 'Cerca per titolo, autore, genere o qualsiasi altro campo. Usa Ctrl+K per focus rapido' },
-      { selector: '#genreFilter', title: 'Filtra gli elementi per genere specifico' },
-      { selector: '#statusFilter', title: 'Mostra solo elementi processati, in attesa o modificati' },
-      { selector: '#saveChangesBtn', title: 'Crea una Pull Request con tutte le modifiche effettuate' },
-      { selector: '#bulkEditBtn', title: 'Seleziona più elementi e modificali contemporaneamente' },
-      { selector: '#updateItemBtn', title: 'Salva le modifiche all\'elemento selezionato' },
-      { selector: '#resetFormBtn', title: 'Ripristina i valori originali dell\'elemento' }
-    ];
-    
-    elementsWithTooltips.forEach(({ selector, title }) => {
-      const element = document.querySelector(selector);
-      if (element && !element.hasAttribute('title')) {
-        element.setAttribute('title', title);
-        element.setAttribute('data-bs-toggle', 'tooltip');
-        element.setAttribute('data-bs-placement', 'top');
-        new bootstrap.Tooltip(element);
-      }
-    });
-  }
-
-  // Override the original showToast function with enhanced version
-  window.showToast = showEnhancedToast;
-
-  // Import button event listener (backup for Bootstrap modal trigger)
-  importBtn.addEventListener('click', function(e) {
-    console.log('Import button clicked');
-    e.preventDefault();
-    importModal.show();
+  // Listen for network status changes
+  window.addEventListener('online', function() {
+    showToast('Connessione internet ripristinata', 'success');
   });
 
-  // Debug: Check if import button exists and is visible
-  console.log('Import button:', importBtn);
-  console.log('Import modal:', importModal);
-
-  // Initialize all enhanced features
-  setTimeout(() => {
-    initializeEnhancedKeyboardNavigation();
-    initializeWelcomeModal();
-    initializeTooltips();
-  }, 1000);
-});
-
-// Enhanced navigation behavior and fixes
-document.addEventListener('DOMContentLoaded', function() {
-  // Enhanced navbar scroll behavior
-  const navbar = document.querySelector('.navbar');
-  let lastScrollTop = 0;
-  
-  window.addEventListener('scroll', function() {
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
-    if (scrollTop > 20) {
-      navbar.classList.add('scrolled');
-    } else {
-      navbar.classList.remove('scrolled');
-    }
-    
-    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+  window.addEventListener('offline', function() {
+    showToast('Connessione internet persa. I dati verranno salvati localmente.', 'warning');
   });
 
-  // Enhanced mobile navigation
-  const navbarToggler = document.querySelector('.navbar-toggler');
-  const navbarCollapse = document.querySelector('.navbar-collapse');
-  
-  if (navbarToggler && navbarCollapse) {
-    navbarToggler.addEventListener('click', function() {
-      // Add smooth animation class
-      navbarCollapse.classList.add('transitioning');
+  // Check network status on load
+  handleNetworkStatus();
+
+  // Enhanced navigation behavior and fixes
+  document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced navbar scroll behavior
+    const navbar = document.querySelector('.navbar');
+    let lastScrollTop = 0;
+    
+    window.addEventListener('scroll', function() {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
       
-      setTimeout(() => {
-        navbarCollapse.classList.remove('transitioning');
-      }, 350);
+      if (scrollTop > 20) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+      
+      lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
     });
 
-    // Close mobile menu when clicking on nav items
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-      link.addEventListener('click', function() {
-        if (window.innerWidth < 992) {
-          const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
-          if (bsCollapse) {
-            bsCollapse.hide();
-          }
-        }
-      });
-    });
-  }
-
-  // Enhanced statistics badge updates with animation
-  function updateStatsBadgeWithAnimation(badgeId, value) {
-    const badge = document.getElementById(badgeId);
-    if (badge) {
-      const span = badge.querySelector('span');
-      if (span && span.textContent !== value.toString()) {
-        badge.classList.add('updated');
-        span.textContent = value;
+    // Enhanced mobile navigation
+    const navbarToggler = document.querySelector('.navbar-toggler');
+    const navbarCollapse = document.querySelector('.navbar-collapse');
+    
+    if (navbarToggler && navbarCollapse) {
+      navbarToggler.addEventListener('click', function() {
+        // Add smooth animation class
+        navbarCollapse.classList.add('transitioning');
         
         setTimeout(() => {
-          badge.classList.remove('updated');
-        }, 600);
-      }
-    }
-  }
+          navbarCollapse.classList.remove('transitioning');
+        }, 350);
+      });
 
-  // Enhanced save button state management
-  function updateSaveButtonState(hasChanges) {
-    if (saveChangesBtn && changesIndicator) {
-      if (hasChanges) {
-        saveChangesBtn.classList.add('has-changes');
-        changesIndicator.style.display = 'block';
-        changesIndicator.setAttribute('aria-hidden', 'false');
-      } else {
-        saveChangesBtn.classList.remove('has-changes');
-        changesIndicator.style.display = 'none';
-        changesIndicator.setAttribute('aria-hidden', 'true');
-      }
+      // Close mobile menu when clicking on nav items
+      const navLinks = document.querySelectorAll('.nav-link');
+      navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (window.innerWidth < 992) {
+            const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
+            if (bsCollapse) {
+              bsCollapse.hide();
+            }
+          }
+        });
+      });
     }
-  }
 
-  // Keyboard navigation improvements
-  document.addEventListener('keydown', function(e) {
-    // ESC to close mobile menu
-    if (e.key === 'Escape' && navbarCollapse && navbarCollapse.classList.contains('show')) {
-      const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
-      if (bsCollapse) {
-        bsCollapse.hide();
+    // Enhanced statistics badge updates with animation
+    function updateStatsBadgeWithAnimation(badgeId, value) {
+      const badge = document.getElementById(badgeId);
+      if (badge) {
+        const span = badge.querySelector('span');
+        if (span && span.textContent !== value.toString()) {
+          badge.classList.add('updated');
+          span.textContent = value;
+          
+          setTimeout(() => {
+            badge.classList.remove('updated');
+          }, 600);
+        }
       }
     }
-    
-    // Tab navigation improvements
-    if (e.key === 'Tab') {
-      // Ensure focus is visible
-      document.body.classList.add('keyboard-navigation');
+
+    // Enhanced save button state management
+    function updateSaveButtonState(hasChanges) {
+      if (saveChangesBtn && changesIndicator) {
+        if (hasChanges) {
+          saveChangesBtn.classList.add('has-changes');
+          changesIndicator.style.display = 'block';
+          changesIndicator.setAttribute('aria-hidden', 'false');
+        } else {
+          saveChangesBtn.classList.remove('has-changes');
+          changesIndicator.style.display = 'none';
+          changesIndicator.setAttribute('aria-hidden', 'true');
+        }
+      }
     }
+
+    // Keyboard navigation improvements
+    document.addEventListener('keydown', function(e) {
+      // ESC to close mobile menu
+      if (e.key === 'Escape' && navbarCollapse && navbarCollapse.classList.contains('show')) {
+        const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
+        if (bsCollapse) {
+         
+          bsCollapse.hide();
+        }
+      }
+      
+      // Tab navigation improvements
+      if (e.key === 'Tab') {
+        // Ensure focus is visible
+        document.body.classList.add('keyboard-navigation');
+      }
+    });
+
+    // Remove keyboard navigation class on mouse use
+    document.addEventListener('mousedown', function() {
+      document.body.classList.remove('keyboard-navigation');
+    });
+
+    // Export functions for use in other scripts
+    window.navigationEnhancements = {
+      updateStatsBadgeWithAnimation,
+      updateSaveButtonState
+    };
   });
-
-  // Remove keyboard navigation class on mouse use
-  document.addEventListener('mousedown', function() {
-    document.body.classList.remove('keyboard-navigation');
-  });
-
-  // Export functions for use in other scripts
-  window.navigationEnhancements = {
-    updateStatsBadgeWithAnimation,
-    updateSaveButtonState
-  };
 });
+
+//# sourceMappingURL=app.js.map
