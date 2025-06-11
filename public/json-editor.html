@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor JSON Completo - Audiolibri.org</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .json-editor-page {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background-attachment: fixed;
+    }
+    
+    .table-responsive-stack {
+      overflow-x: auto;
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    .editable-cell {
+      position: relative;
+      cursor: pointer;
+      min-height: 35px;
+      padding: 10px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: white;
+    }
+    
+    .editable-cell:hover {
+      background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+      border-color: #667eea;
+      transform: scale(1.02);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+    }
+    
+    .editable-cell.editing {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffecb3 100%);
+      border-color: #f093fb;
+      box-shadow: 0 6px 20px rgba(240, 147, 251, 0.3);
+    }
+    
+    .cell-editor {
+      width: 100%;
+      border: none;
+      background: transparent;
+      outline: none;
+      resize: none;
+      min-height: 30px;
+    }
+    
+    .column-header {
+      position: sticky;
+      top: 0;
+      background: #343a40;
+      color: white;
+      z-index: 10;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    
+    .column-controls {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      margin-top: 5px;
+    }
+    
+    .json-table {
+      font-size: 0.9rem;
+    }
+    
+    .json-table td {
+      max-width: 250px;
+      word-wrap: break-word;
+      vertical-align: top;
+      border: 1px solid #dee2e6;
+    }
+    
+    .pagination-controls {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    
+    .save-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .save-indicator.show {
+      opacity: 1;
+    }
+    
+    .changes-panel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 2px solid #28a745;
+      padding: 15px;
+      transform: translateY(100%);
+      transition: transform 0.3s;
+      z-index: 1000;
+      box-shadow: 0 -4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .changes-panel.show {
+      transform: translateY(0);
+    }
+    
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    
+    .loading-content {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .filter-bar {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      display: none;
+    }
+    
+    .loading-content {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    
+    /* Mobile responsiveness fixes */
+    @media (max-width: 768px) {
+      .filter-bar .row > div {
+        margin-bottom: 10px;
+      }
+      
+      .pagination-controls .row {
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .json-table {
+        font-size: 0.8rem;
+      }
+      
+      .json-table td {
+        max-width: 150px;
+        padding: 4px;
+      }
+      
+      .cell-type-indicator {
+        display: none;
+      }
+      
+      .column-controls {
+        display: none;
+      }
+      
+      .changes-panel .row {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .changes-panel .col-md-4 {
+        text-align: center !important;
+      }
+      
+      /* Better mobile table scrolling */
+      .table-responsive-stack {
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      /* Improve modal display on mobile */
+      .modal-xl {
+        max-width: 95vw;
+      }
+      
+      .modal-dialog {
+        margin: 10px;
+      }
+      
+      /* Better navigation on mobile */
+      .navbar-nav .nav-link {
+        padding: 0.75rem 1rem;
+      }
+    }
+    
+    /* Tablet specific adjustments */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .json-table td {
+        max-width: 200px;
+      }
+      
+      .filter-bar .col-md-3, 
+      .filter-bar .col-md-2 {
+        margin-bottom: 15px;
+      }
+    }
+    
+    /* Accessibility improvements */
+    .editable-cell:focus {
+      outline: 2px solid #0d6efd;
+      outline-offset: 2px;
+    }
+    
+    .cell-editor:focus {
+      box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    
+    /* Performance optimizations */
+    .table-responsive-stack {
+      will-change: scroll-position;
+    }
+    
+    .json-table tbody tr {
+      contain: style layout;
+    }
+    
+    .cell-type-indicator {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      font-size: 10px;
+      padding: 1px 3px;
+      border-radius: 2px;
+      color: white;
+    }
+    
+    .type-string { background: #17a2b8; }
+    .type-number { background: #28a745; }
+    .type-boolean { background: #ffc107; color: black; }
+    .type-null { background: #6c757d; }
+    .type-array { background: #dc3545; }
+    .type-object { background: #6f42c1; }
+    
+    /* Row selection styles */
+    .json-table tbody tr {
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .json-table tbody tr:hover {
+      background-color: #f8f9fa !important;
+    }
+    
+    .json-table tbody tr.table-info {
+      background-color: #d1ecf1 !important;
+      border-left: 3px solid #0dcaf0;
+    }
+    
+    /* Bulk actions toolbar */
+    #bulkActionsToolbar {
+      border-left: 4px solid #0dcaf0;
+      background: linear-gradient(135deg, #d1ecf1 0%, #b6e6f5 100%);
+    }
+    
+    /* Selection helper text */
+    .selection-helper {
+      font-size: 0.8rem;
+      color: #6c757d;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body class="json-editor-page">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="index.html">
+        <i class="fas fa-headphones me-2"></i>Audiolibri.org - Editor JSON
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="index.html">
+              <i class="fas fa-arrow-left me-1"></i>Torna all'Editor Principale
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" id="saveAllBtn" title="Salva tutte le modifiche">
+              <i class="fas fa-save me-1"></i>Salva Modifiche
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" id="helpJsonBtn" data-bs-toggle="modal" data-bs-target="#helpJsonModal">
+              <i class="fas fa-question-circle me-1"></i>Guida
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid mt-4">
+    <!-- Statistics Row -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <div class="row text-center">
+              <div class="col-md-2">
+                <h4 class="text-primary mb-0" id="totalItemsCount">-</h4>
+                <small class="text-muted">Totale Elementi</small>
+              </div>
+              <div class="col-md-2">
+                <h4 class="text-success mb-0" id="currentPageItems">-</h4>
+                <small class="text-muted">Pagina Corrente</small>
+              </div>
+              <div class="col-md-2">
+                <h4 class="text-warning mb-0" id="modifiedCount">0</h4>
+                <small class="text-muted">Modificati</small>
+              </div>
+              <div class="col-md-2">
+                <h4 class="text-info mb-0" id="columnsCount">-</h4>
+                <small class="text-muted">Colonne</small>
+              </div>
+              <div class="col-md-2">
+                <h4 class="text-secondary mb-0" id="monitoringStatus">
+                  <i class="fas fa-circle text-secondary"></i>
+                </h4>
+                <small class="text-muted">Monitor</small>
+              </div>
+              <div class="col-md-2">
+                <h4 class="text-muted mb-0" id="nextCheckIn">-</h4>
+                <small class="text-muted">Prossimo Check</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="row align-items-end">
+        <div class="col-md-3">
+          <label for="searchGlobal" class="form-label">Ricerca Globale</label>
+          <input type="text" class="form-control" id="searchGlobal" placeholder="Cerca in tutti i campi...">
+        </div>
+        <div class="col-md-2">
+          <label for="filterColumn" class="form-label">Filtra Colonna</label>
+          <select class="form-select" id="filterColumn">
+            <option value="">Tutte le colonne</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="filterValue" class="form-label">Valore</label>
+          <input type="text" class="form-control" id="filterValue" placeholder="Valore da filtrare">
+        </div>
+        <div class="col-md-2">
+          <label for="sortColumn" class="form-label">Ordina per</label>
+          <select class="form-select" id="sortColumn">
+            <option value="">Nessun ordinamento</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="sortDirection" class="form-label">Direzione</label>
+          <select class="form-select" id="sortDirection">
+            <option value="asc">Crescente</option>
+            <option value="desc">Decrescente</option>
+          </select>
+        </div>
+        <div class="col-md-1">
+          <button class="btn btn-outline-secondary" id="clearFiltersBtn" title="Pulisci filtri">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination-controls">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <div class="d-flex align-items-center gap-3">
+            <label for="itemsPerPage" class="form-label mb-0">Elementi per pagina:</label>
+            <select class="form-select" id="itemsPerPage" style="width: auto;">
+              <option value="25">25</option>
+              <option value="50" selected>50</option>
+              <option value="100">100</option>
+              <option value="200">200</option>
+            </select>
+            <span class="text-muted" id="pageInfo">Pagina 1 di 1</span>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <nav aria-label="Navigazione pagine">
+            <div id="paginationContainer">
+              <!-- Pagination buttons will be generated here -->
+            </div>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Table -->
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="fas fa-table me-2"></i>Database JSON - Vista Tabellare
+          </h5>
+          <div class="btn-group" role="group">
+            <button class="btn btn-outline-light btn-sm" id="selectAllBtn">
+              <i class="fas fa-check-square me-1"></i>Seleziona Tutto
+            </button>
+            <button class="btn btn-outline-light btn-sm" id="addRowBtn">
+              <i class="fas fa-plus me-1"></i>Aggiungi Riga
+            </button>
+            <button class="btn btn-outline-light btn-sm" id="columnsToggleBtn">
+              <i class="fas fa-columns me-1"></i>Gestisci Colonne
+            </button>
+            <button class="btn btn-outline-light btn-sm" id="exportCurrentPageBtn">
+              <i class="fas fa-download me-1"></i>Esporta Pagina
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive-stack">
+          <table class="table table-striped table-hover json-table mb-0" id="jsonTable">
+            <thead id="tableHeader">
+              <!-- Headers will be generated dynamically -->
+            </thead>
+            <tbody id="tableBody">
+              <!-- Rows will be generated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+      <h5>Caricamento dati...</h5>
+      <p class="text-muted">Attendere prego</p>
+    </div>
+  </div>
+
+  <!-- Save Indicator -->
+  <div class="save-indicator" id="saveIndicator">
+    <div class="alert alert-success mb-0">
+      <i class="fas fa-check-circle me-2"></i>Salvato automaticamente
+    </div>
+  </div>
+
+  <!-- Changes Panel -->
+  <div class="changes-panel" id="changesPanel">
+    <div class="container-fluid">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h6 class="mb-0">
+            <i class="fas fa-edit me-2"></i>
+            <span id="changesCount">0</span> modifiche non salvate
+          </h6>
+          <small class="text-muted">Le modifiche vengono salvate automaticamente dopo 2 secondi di inattività</small>
+        </div>
+        <div class="col-md-4 text-end">
+          <button class="btn btn-success me-2" id="saveChangesNowBtn">
+            <i class="fas fa-save me-1"></i>Salva Ora
+          </button>
+          <button class="btn btn-outline-danger" id="discardChangesBtn">
+            <i class="fas fa-times me-1"></i>Scarta
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Column Management Modal -->
+  <div class="modal fade" id="columnsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="fas fa-columns me-2"></i>Gestione Colonne
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>Colonne Visibili</h6>
+              <div id="visibleColumns" class="border rounded p-3 mb-3" style="min-height: 200px;">
+                <!-- Visible columns will be listed here -->
+              </div>
+            </div>
+            <div class="col-md-6">
+              <h6>Colonne Nascoste</h6>
+              <div id="hiddenColumns" class="border rounded p-3 mb-3" style="min-height: 200px;">
+                <!-- Hidden columns will be listed here -->
+              </div>
+            </div>
+          </div>
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Trascina le colonne tra le due aree per mostrarle o nasconderle. L'ordine delle colonne visibili corrisponde all'ordine nella tabella.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+          <button type="button" class="btn btn-primary" id="applyColumnsBtn">Applica Modifiche</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Modal -->
+  <div class="modal fade" id="helpJsonModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title">
+            <i class="fas fa-question-circle me-2"></i>Guida Editor JSON Completo
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="nav flex-column nav-pills" role="tablist">
+                <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#help-overview">
+                  <i class="fas fa-home me-2"></i>Panoramica
+                </button>
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#help-editing">
+                  <i class="fas fa-edit me-2"></i>Modifica Celle
+                </button>
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#help-navigation">
+                  <i class="fas fa-arrows-alt me-2"></i>Navigazione
+                </button>
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#help-filters">
+                  <i class="fas fa-filter me-2"></i>Filtri e Ricerca
+                </button>
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#help-columns">
+                  <i class="fas fa-columns me-2"></i>Gestione Colonne
+                </button>
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#help-shortcuts">
+                  <i class="fas fa-keyboard me-2"></i>Scorciatoie
+                </button>
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#help-bulk">
+                  <i class="fas fa-check-square me-2"></i>Operazioni Blocco
+                </button>
+              </div>
+            </div>
+            <div class="col-md-9">
+              <div class="tab-content">
+                <!-- Overview Tab -->
+                <div class="tab-pane fade show active" id="help-overview">
+                  <h4><i class="fas fa-home me-2 text-info"></i>Editor JSON Completo</h4>
+                  <p class="lead">Visualizza e modifica l'intero database in formato tabellare con funzionalità avanzate di editing e navigazione.</p>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Caratteristiche Principali</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <ul>
+                            <li><strong>Editing in-line:</strong> Clicca su qualsiasi cella per modificarla</li>
+                            <li><strong>Auto-save:</strong> Salvataggio automatico dopo 2 secondi</li>
+                            <li><strong>Paginazione:</strong> Gestione di grandi dataset (1700+ elementi)</li>
+                            <li><strong>Filtri avanzati:</strong> Ricerca e filtri per colonna</li>
+                          </ul>
+                        </div>
+                        <div class="col-md-6">
+                          <ul>
+                            <li><strong>Gestione colonne:</strong> Mostra/nascondi e riordina colonne</li>
+                            <li><strong>Tipi di dati:</strong> Indicatori visivi per ogni tipo</li>
+                            <li><strong>Ordinamento:</strong> Ordina per qualsiasi colonna</li>
+                            <li><strong>Export:</strong> Esporta pagina corrente o filtri</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Attenzione</h6>
+                    <p class="mb-0">Questo editor mostra i dati JSON grezzi. Le modifiche sono immediate e potrebbero influenzare il funzionamento dell'applicazione se non eseguite correttamente.</p>
+                  </div>
+                </div>
+
+                <!-- Editing Tab -->
+                <div class="tab-pane fade" id="help-editing">
+                  <h4><i class="fas fa-edit me-2 text-info"></i>Modifica delle Celle</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Come Modificare</strong></div>
+                    <div class="card-body">
+                      <ol>
+                        <li><strong>Click singolo</strong> su qualsiasi cella per attivarla</li>
+                        <li><strong>Modifica il contenuto</strong> direttamente nella cella</li>
+                        <li><strong>Premi Invio o clicca altrove</strong> per confermare</li>
+                        <li><strong>Premi Esc</strong> per annullare la modifica</li>
+                      </ol>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Tipi di Dati Supportati</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6>Tipi Primitivi</h6>
+                          <ul>
+                            <li><span class="badge type-string">STR</span> <strong>Stringa:</strong> Testo normale</li>
+                            <li><span class="badge type-number">NUM</span> <strong>Numero:</strong> Interi e decimali</li>
+                            <li><span class="badge type-boolean">BOOL</span> <strong>Boolean:</strong> true/false</li>
+                            <li><span class="badge type-null">NULL</span> <strong>Null:</strong> Valore nullo</li>
+                          </ul>
+                        </div>
+                        <div class="col-md-6">
+                          <h6>Tipi Complessi</h6>
+                          <ul>
+                            <li><span class="badge type-array">ARR</span> <strong>Array:</strong> Liste di valori</li>
+                            <li><span class="badge type-object">OBJ</span> <strong>Object:</strong> Oggetti JSON</li>
+                          </ul>
+                          <p class="small text-muted">Array e oggetti vengono mostrati come JSON stringificato per la modifica</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="alert alert-info">
+                    <h6><i class="fas fa-magic me-2"></i>Auto-validazione</h6>
+                    <p class="mb-0">Il sistema valida automaticamente i tipi di dati e evidenzia gli errori. I valori non validi vengono segnalati prima del salvataggio.</p>
+                  </div>
+                </div>
+
+                <!-- Navigation Tab -->
+                <div class="tab-pane fade" id="help-navigation">
+                  <h4><i class="fas fa-arrows-alt me-2 text-info"></i>Navigazione</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Paginazione</strong></div>
+                    <div class="card-body">
+                      <p>Il database è diviso in pagine per migliorare le performance:</p>
+                      <ul>
+                        <li><strong>25, 50, 100, 200</strong> elementi per pagina</li>
+                        <li><strong>Navigazione numerata</strong> con prime/ultime pagine</li>
+                        <li><strong>Info pagina corrente</strong> sempre visibile</li>
+                        <li><strong>URL preservato</strong> per bookmark e condivisione</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Scorrimento e Selezione</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6>Scorrimento Tabella</h6>
+                          <ul>
+                            <li>Scroll orizzontale per colonne numerose</li>
+                            <li>Headers fissi durante lo scroll</li>
+                            <li>Scroll fluido per navigazione rapida</li>
+                          </ul>
+                        </div>
+                        <div class="col-md-6">
+                          <h6>Selezione Celle</h6>
+                          <ul>
+                            <li>Click per selezionare e modificare</li>
+                            <li>Tab/Shift+Tab per navigare tra celle</li>
+                            <li>Frecce direzionali per spostarsi</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Filters Tab -->
+                <div class="tab-pane fade" id="help-filters">
+                  <h4><i class="fas fa-filter me-2 text-info"></i>Filtri e Ricerca</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Ricerca Globale</strong></div>
+                    <div class="card-body">
+                      <p>Cerca in tutte le colonne contemporaneamente:</p>
+                      <ul>
+                        <li><strong>Ricerca testuale:</strong> Trova testo in qualsiasi campo</li>
+                        <li><strong>Case-insensitive:</strong> Non distingue maiuscole/minuscole</li>
+                        <li><strong>Ricerca parziale:</strong> Trova corrispondenze anche parziali</li>
+                        <li><strong>Aggiornamento automatico:</strong> Filtri applicati in tempo reale</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Filtri per Colonna</strong></div>
+                    <div class="card-body">
+                      <p>Filtra i dati in base a specifiche colonne:</p>
+                      <ol>
+                        <li>Seleziona la colonna dal menu a discesa</li>
+                        <li>Inserisci il valore da filtrare</li>
+                        <li>I risultati si aggiornano automaticamente</li>
+                        <li>Usa il pulsante X per pulire i filtri</li>
+                      </ol>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Ordinamento</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6>Ordinamento Semplice</h6>
+                          <ul>
+                            <li>Seleziona colonna da ordinare</li>
+                            <li>Scegli direzione (Crescente/Decrescente)</li>
+                            <li>Ordinamento numerico e alfabetico intelligente</li>
+                          </ul>
+                        </div>
+                        <div class="col-md-6">
+                          <h6>Tipi di Ordinamento</h6>
+                          <ul>
+                            <li><strong>Stringhe:</strong> Ordine alfabetico</li>
+                            <li><strong>Numeri:</strong> Ordine numerico</li>
+                            <li><strong>Date:</strong> Ordine cronologico</li>
+                            <li><strong>Boolean:</strong> false prima di true</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Columns Tab -->
+                <div class="tab-pane fade" id="help-columns">
+                  <h4><i class="fas fa-columns me-2 text-info"></i>Gestione Colonne</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Mostra/Nascondi Colonne</strong></div>
+                    <div class="card-body">
+                      <ol>
+                        <li>Clicca "Gestisci Colonne" nella barra degli strumenti</li>
+                        <li>Trascina le colonne tra "Visibili" e "Nascoste"</li>
+                        <li>Riordina le colonne visibili trascinandole</li>
+                        <li>Clicca "Applica Modifiche" per salvare</li>
+                      </ol>
+                      <div class="alert alert-info mt-3">
+                        <small><i class="fas fa-info-circle me-1"></i>L'ordine delle colonne visibili corrisponde all'ordine nella tabella</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Colonne Predefinite</strong></div>
+                    <div class="card-body">
+                      <p>Alcune colonne sono sempre visibili per la navigazione:</p>
+                      <ul>
+                        <li><strong>ID:</strong> Identificatore unico dell'elemento</li>
+                        <li><strong>Titolo:</strong> Titolo dell'opera (se disponibile)</li>
+                        <li><strong>Autore:</strong> Autore dell'opera (se disponibile)</li>
+                      </ul>
+                      <p class="small text-muted">Queste colonne non possono essere nascoste per mantenere la leggibilità dei dati.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Shortcuts Tab -->
+                <div class="tab-pane fade" id="help-shortcuts">
+                  <h4><i class="fas fa-keyboard me-2 text-info"></i>Scorciatoie da Tastiera</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Navigazione Generale</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <table class="table table-sm">
+                            <tbody>
+                              <tr><td><kbd>Ctrl/Cmd + S</kbd></td><td>Salva modifiche</td></tr>
+                              <tr><td><kbd>Ctrl/Cmd + F</kbd></td><td>Focalizza ricerca globale</td></tr>
+                              <tr><td><kbd>Ctrl/Cmd + Z</kbd></td><td>Annulla ultima modifica</td></tr>
+                              <tr><td><kbd>Esc</kbd></td><td>Annulla modifica corrente</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="col-md-6">
+                          <table class="table table-sm">
+                            <tbody>
+                              <tr><td><kbd>Page Up/Down</kbd></td><td>Naviga tra pagine</td></tr>
+                              <tr><td><kbd>Home/End</kbd></td><td>Prima/Ultima pagina</td></tr>
+                              <tr><td><kbd>Tab</kbd></td><td>Prossima cella</td></tr>
+                              <tr><td><kbd>Shift + Tab</kbd></td><td>Cella precedente</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Modifica Celle</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <table class="table table-sm">
+                            <tbody>
+                              <tr><td><kbd>Invio</kbd></td><td>Conferma modifica</td></tr>
+                              <tr><td><kbd>Esc</kbd></td><td>Annulla modifica</td></tr>
+                              <tr><td><kbd>F2</kbd></td><td>Avvia modifica cella</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="col-md-6">
+                          <table class="table table-sm">
+                            <tbody>
+                              <tr><td><kbd>↑ ↓ ← →</kbd></td><td>Naviga tra celle</td></tr>
+                              <tr><td><kbd>Ctrl/Cmd + A</kbd></td><td>Seleziona tutto il testo</td></tr>
+                              <tr><td><kbd>Double Click</kbd></td><td>Modifica rapida cella</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="alert alert-success">
+                    <h6><i class="fas fa-lightbulb me-2"></i>Suggerimenti per l'Efficienza</h6>
+                    <ul class="mb-0">
+                      <li>Usa Tab per spostarti rapidamente tra le celle durante la modifica</li>
+                      <li>Imposta filtri per lavorare su sottoinsiemi specifici di dati</li>
+                      <li>Modifica colonne simili in sequenza per maggiore efficienza</li>
+                      <li>Usa Ctrl+Z se commetti errori durante le modifiche</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Bulk Operations Tab -->
+                <div class="tab-pane fade" id="help-bulk">
+                  <h4><i class="fas fa-check-square me-2 text-info"></i>Operazioni in Blocco</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Selezione Elementi</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6>Selezione Singola</h6>
+                          <ul>
+                            <li><strong>Click sulla riga:</strong> Seleziona un elemento</li>
+                            <li><strong>Ctrl + Click:</strong> Aggiunge/rimuove dalla selezione</li>
+                            <li><strong>Ctrl + A:</strong> Seleziona tutti gli elementi della pagina</li>
+                          </ul>
+                        </div>
+                        <div class="col-md-6">
+                          <h6>Indicatori Visivi</h6>
+                          <ul>
+                            <li><strong>Sfondo azzurro:</strong> Elementi selezionati</li>
+                            <li><strong>Barra laterale:</strong> Indica la selezione</li>
+                            <li><strong>Contatore:</strong> Numero elementi selezionati</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Modifica in Blocco</strong></div>
+                    <div class="card-body">
+                      <ol>
+                        <li>Seleziona gli elementi desiderati</li>
+                        <li>Clicca "Modifica in blocco" nella barra degli strumenti</li>
+                        <li>Scegli il campo da modificare</li>
+                        <li>Inserisci il nuovo valore</li>
+                        <li>Conferma per applicare a tutti gli elementi selezionati</li>
+                      </ol>
+                      <div class="alert alert-warning mt-2">
+                        <small><i class="fas fa-exclamation-triangle me-1"></i>Le modifiche in blocco sono immediate e possono coinvolgere molti elementi. Usa con cautela!</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Eliminazione in Blocco</strong></div>
+                    <div class="card-body">
+                      <p>Per eliminare più elementi contemporaneamente:</p>
+                      <ol>
+                        <li>Seleziona gli elementi da eliminare</li>
+                        <li>Clicca "Elimina selezionati" oppure premi <kbd>Delete</kbd></li>
+                        <li>Conferma l'operazione nel dialog</li>
+                      </ol>
+                      <div class="alert alert-danger mt-2">
+                        <small><i class="fas fa-exclamation-triangle me-1"></i>L'eliminazione in blocco è irreversibile. Assicurati di aver selezionato gli elementi corretti!</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Scorciatoie per Selezione</strong></div>
+                    <div class="card-body">
+                      <table class="table table-sm">
+                        <tbody>
+                          <tr><td><kbd>Ctrl/Cmd + A</kbd></td><td>Seleziona tutti gli elementi della pagina</td></tr>
+                          <tr><td><kbd>Esc</kbd></td><td>Deseleziona tutti gli elementi</td></tr>
+                          <tr><td><kbd>Delete</kbd></td><td>Elimina elementi selezionati</td></tr>
+                          <tr><td><kbd>Ctrl + Click</kbd></td><td>Aggiunge/rimuove elemento dalla selezione</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-info text-white" data-bs-dismiss="modal">
+            <i class="fas fa-check me-1"></i>Ho Capito!
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script src="json-editor.js"></script>
+  <script src="ux-enhancements.js"></script>
+</body>
+</html>

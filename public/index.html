@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor Audiolibri</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg">
+    <div class="container">
+      <a class="navbar-brand" href="#" aria-label="Audiolibri.org Homepage">
+        <i class="fas fa-headphones"></i>Audiolibri.org
+      </a>
+      
+      <!-- Mobile toggle for collapsed menu -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <!-- Left side - Statistics badges -->
+        <div class="navbar-nav me-auto">
+          <div class="nav-item stats-badges" role="group" aria-label="Statistics">
+            <span class="badge bg-light text-dark" id="totalItemsNav" title="Totale elementi">
+              <i class="fas fa-database" aria-hidden="true"></i><span>-</span>
+            </span>
+            <span class="badge bg-success" id="processedItemsNav" title="Elementi processati">
+              <i class="fas fa-check" aria-hidden="true"></i><span>-</span>
+            </span>
+            <span class="badge bg-warning" id="pendingItemsNav" title="Elementi in attesa">
+              <i class="fas fa-clock" aria-hidden="true"></i><span>-</span>
+            </span>
+            <span class="badge bg-danger" id="modifiedItemsNav" title="Elementi modificati">
+              <i class="fas fa-edit" aria-hidden="true"></i><span>0</span>
+            </span>
+          </div>
+        </div>
+        
+        <!-- Right side - Action icons -->
+        <ul class="navbar-nav ms-auto" role="menubar">
+          <li class="nav-item" role="none">
+            <a class="nav-link nav-icon" href="#" id="importBtn" data-bs-toggle="modal" data-bs-target="#importModal" 
+               data-has-tooltip="true" data-tooltip="Importa da YouTube" role="menuitem" aria-label="Importa da YouTube">
+              <i class="fab fa-youtube" aria-hidden="true"></i>
+            </a>
+          </li>
+          
+          <li class="nav-item" role="none">
+            <a class="nav-link nav-icon" href="#" id="exportBtn" 
+               data-has-tooltip="true" data-tooltip="Esporta dati" role="menuitem" aria-label="Esporta dati">
+              <i class="fas fa-download" aria-hidden="true"></i>
+            </a>
+          </li>
+          
+          <li class="nav-item" role="none">
+            <a class="nav-link nav-icon" href="#" id="genreManagementBtn" 
+               data-has-tooltip="true" data-tooltip="Gestione generi" role="menuitem" aria-label="Gestione generi">
+              <i class="fas fa-tags" aria-hidden="true"></i>
+            </a>
+          </li>
+          
+          <li class="nav-item" role="none">
+            <a class="nav-link nav-icon" href="#" id="bulkEditBtn" 
+               data-has-tooltip="true" data-tooltip="Modifica multipla" role="menuitem" aria-label="Modifica multipla">
+              <i class="fas fa-edit" aria-hidden="true"></i>
+            </a>
+          </li>
+          
+          <li class="nav-item" role="none">
+            <a class="nav-link nav-icon" href="json-editor.html" 
+               data-has-tooltip="true" data-tooltip="Editor JSON completo" role="menuitem" aria-label="Editor JSON completo">
+              <i class="fas fa-table" aria-hidden="true"></i>
+            </a>
+          </li>
+          
+          <li class="nav-item" role="none">
+            <a class="nav-link nav-icon" href="#" id="helpBtn" data-bs-toggle="modal" data-bs-target="#helpModal" 
+               data-has-tooltip="true" data-tooltip="Guida e aiuto" role="menuitem" aria-label="Guida e aiuto">
+              <i class="fas fa-question-circle" aria-hidden="true"></i>
+            </a>
+          </li>
+          
+          <li class="nav-item" role="none">
+            <a class="nav-link nav-icon save-btn" href="#" id="saveChangesBtn" 
+               data-has-tooltip="true" data-tooltip="Salva modifiche" role="menuitem" aria-label="Salva modifiche">
+              <i class="fas fa-save" aria-hidden="true"></i>
+              <span class="changes-indicator" id="changesIndicator" style="display: none;" aria-hidden="true">●</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer">
+    <!-- Toasts will be dynamically inserted here -->
+  </div>
+
+  <!-- Floating Action Button for Quick Actions -->
+  <div class="fab" id="quickActionsFab" title="Azioni Rapide">
+    <i class="fas fa-plus"></i>
+  </div>
+
+  <!-- Enhanced Quick Actions Panel -->
+  <div class="quick-actions-panel" id="quickActionsPanel" style="display: none;">
+    <div class="quick-actions-content">
+      <div class="row g-2">
+        <div class="col-6 col-md-4">
+          <button class="btn btn-outline-primary w-100 quick-action-btn" id="quickSearchBtn">
+            <i class="fas fa-search mb-1"></i>
+            <div class="small">Ricerca Rapida</div>
+          </button>
+        </div>
+        <div class="col-6 col-md-4">
+          <button class="btn btn-outline-success w-100 quick-action-btn" id="quickImportBtn">
+            <i class="fab fa-youtube mb-1"></i>
+            <div class="small">Importa Video</div>
+          </button>
+        </div>
+        <div class="col-6 col-md-4">
+          <button class="btn btn-outline-info w-100 quick-action-btn" id="quickGenreBtn">
+            <i class="fas fa-tags mb-1"></i>
+            <div class="small">Gestisci Generi</div>
+          </button>
+        </div>
+        <div class="col-6 col-md-4">
+          <button class="btn btn-outline-warning w-100 quick-action-btn" id="quickBulkEditBtn">
+            <i class="fas fa-edit mb-1"></i>
+            <div class="small">Modifica Multipla</div>
+          </button>
+        </div>
+        <div class="col-6 col-md-4">
+          <button class="btn btn-outline-secondary w-100 quick-action-btn" id="quickExportBtn">
+            <i class="fas fa-download mb-1"></i>
+            <div class="small">Esporta Dati</div>
+          </button>
+        </div>
+        <div class="col-6 col-md-4">
+          <button class="btn btn-outline-danger w-100 quick-action-btn" id="quickSaveBtn">
+            <i class="fas fa-save mb-1"></i>
+            <div class="small">Salva Tutto</div>
+          </button>
+        </div>
+      </div>
+      <div class="text-center mt-2">
+        <button class="btn btn-sm btn-outline-light" id="quickHelpBtn">
+          <i class="fas fa-question-circle me-1"></i>Guida
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mt-4">
+
+    <!-- Search and Filters -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="input-group">
+          <input type="text" id="searchInput" class="form-control" placeholder="Cerca per titolo, autore o genere...">
+          <button class="btn btn-primary" id="searchBtn" title="Avvia ricerca" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-search"></i>
+          </button>
+          <button class="btn btn-outline-secondary" id="clearSearchBtn" title="Cancella ricerca" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="row">
+          <div class="col-md-6">
+            <select class="form-select" id="genreFilter">
+              <option value="">Tutti i Generi</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <select class="form-select" id="statusFilter">
+              <option value="">Tutti gli Stati</option>
+              <option value="processed">Processati</option>
+              <option value="pending">In Attesa</option>
+              <option value="modified">Modificati</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Elementi <span id="itemsCount" class="badge bg-light text-primary ms-2">0</span></h5>
+          </div>
+          <div class="card-body p-0">
+            <!-- Pagination Controls -->
+            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+              <div>
+                <select class="form-select form-select-sm" id="itemsPerPage" style="width: auto;">
+                  <option value="20">20 per pagina</option>
+                  <option value="50">50 per pagina</option>
+                  <option value="100">100 per pagina</option>
+                </select>
+              </div>
+              <nav aria-label="Paginazione elementi">
+                <ul class="pagination pagination-sm mb-0" id="pagination">
+                  <!-- Pagination buttons will be generated here -->
+                </ul>
+              </nav>
+            </div>
+            
+            <div class="list-group list-group-flush" id="itemsList">
+              <!-- Loading skeleton -->
+              <div class="list-group-item skeleton-loader" id="skeletonLoader">
+                <div class="d-flex align-items-center">
+                  <div class="skeleton-circle me-3"></div>
+                  <div class="flex-grow-1">
+                    <div class="skeleton-line mb-2"></div>
+                    <div class="skeleton-line short"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Modifica Elemento</h5>
+          </div>
+          <div class="card-body">
+            <form id="editForm">
+              <div id="noItemSelected" class="text-center py-5">
+                <p class="text-muted">Seleziona un elemento dalla lista per modificarlo</p>
+              </div>
+              <div id="itemDetails" style="display: none;">
+                <!-- Navigation tabs for different sections -->
+                <ul class="nav nav-tabs" id="editTabs" role="tablist">
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic-info" type="button" role="tab">
+                      <i class="fas fa-edit me-1"></i>Informazioni Base
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="metadata-tab" data-bs-toggle="tab" data-bs-target="#metadata-info" type="button" role="tab">
+                      <i class="fas fa-info-circle me-1"></i>Metadati YouTube
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="content-tab" data-bs-toggle="tab" data-bs-target="#content-info" type="button" role="tab">
+                      <i class="fas fa-tags me-1"></i>Contenuto & Tag
+                    </button>
+                  </li>
+                </ul>
+
+                <div class="tab-content mt-3" id="editTabsContent">
+                  <!-- Basic Information Tab -->
+                  <div class="tab-pane fade show active" id="basic-info" role="tabpanel">
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label for="realTitle" class="form-label">Titolo</label>
+                        <input type="text" class="form-control" id="realTitle" name="real_title" required>
+                      </div>
+                      <div class="col-md-6">
+                        <label for="realAuthor" class="form-label">Autore</label>
+                        <input type="text" class="form-control" id="realAuthor" name="real_author" required>
+                      </div>
+                    </div>
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label for="realGenre" class="form-label">Genere</label>
+                        <select class="form-select" id="realGenre" name="real_genre">
+                          <option value="">Seleziona genere</option>
+                          <!-- Genres will be populated dynamically -->
+                        </select>
+                      </div>
+                      <div class="col-md-6">
+                        <label for="realContentType" class="form-label">Tipo Contenuto</label>
+                        <select class="form-select" id="realContentType" name="content_type">
+                          <option value="audiobook">Audiolibro</option>
+                          <option value="podcast">Podcast</option>
+                          <option value="story">Racconto</option>
+                          <option value="novel">Romanzo</option>
+                          <option value="poetry">Poesia</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label for="realLanguage" class="form-label">Lingua</label>
+                        <select class="form-select" id="realLanguage" name="real_language">
+                          <option value="it">Italiano</option>
+                          <option value="en">Inglese</option>
+                          <option value="fr">Francese</option>
+                          <option value="de">Tedesco</option>
+                          <option value="es">Spagnolo</option>
+                        </select>
+                      </div>
+                      <div class="col-md-6">
+                        <label for="realNarrator" class="form-label">Narratore</label>
+                        <input type="text" class="form-control" id="realNarrator" name="real_narrator" placeholder="Nome del narratore">
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="realSynopsis" class="form-label">Sinossi</label>
+                      <textarea class="form-control" id="realSynopsis" name="real_synopsis" rows="4" placeholder="Inserisci una breve descrizione del contenuto..."></textarea>
+                      <div class="form-text">
+                        <span id="synopsisCount">0</span>/500 caratteri
+                      </div>
+                    </div>
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label for="realPublishedYear" class="form-label">Anno di Pubblicazione</label>
+                        <input type="number" class="form-control" id="realPublishedYear" name="real_published_year" min="1800" max="2030">
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-check mt-4">
+                          <input class="form-check-input" type="checkbox" id="isProcessed" name="processed" disabled>
+                          <label class="form-check-label" for="isProcessed">
+                            Elemento processato
+                          </label>
+                          <div class="form-text">Stato gestito automaticamente dal sistema</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- YouTube Metadata Tab -->
+                  <div class="tab-pane fade" id="metadata-info" role="tabpanel">
+                    <div class="alert alert-info">
+                      <i class="fas fa-info-circle me-2"></i>
+                      Questi dati vengono estratti automaticamente da YouTube e sono di sola lettura.
+                    </div>
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label for="originalTitle" class="form-label">Titolo Originale YouTube</label>
+                        <input type="text" class="form-control" id="originalTitle" readonly>
+                      </div>
+                      <div class="col-md-6">
+                        <label for="channelName" class="form-label">Nome Canale</label>
+                        <input type="text" class="form-control" id="channelName" readonly>
+                      </div>
+                    </div>
+                    <div class="row mb-3">
+                      <div class="col-md-4">
+                        <label for="viewCount" class="form-label">Visualizzazioni</label>
+                        <input type="text" class="form-control" id="viewCount" readonly>
+                      </div>
+                      <div class="col-md-4">
+                        <label for="likeCount" class="form-label">Like</label>
+                        <input type="text" class="form-control" id="likeCount" readonly>
+                      </div>
+                      <div class="col-md-4">
+                        <label for="duration" class="form-label">Durata</label>
+                        <input type="text" class="form-control" id="duration" readonly>
+                      </div>
+                    </div>
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label for="uploadDate" class="form-label">Data Upload</label>
+                        <input type="text" class="form-control" id="uploadDate" readonly>
+                      </div>
+                      <div class="col-md-6">
+                        <label for="youtubeUrl" class="form-label">URL YouTube</label>
+                        <div class="input-group">
+                          <input type="url" class="form-control" id="youtubeUrl" name="youtube_url" readonly>
+                          <button class="btn btn-outline-primary" type="button" id="openYouTubeBtn">
+                            <i class="fab fa-youtube me-1"></i>Apri
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="originalDescription" class="form-label">Descrizione Originale</label>
+                      <textarea class="form-control" id="originalDescription" rows="4" readonly></textarea>
+                    </div>
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label for="thumbnail" class="form-label">Thumbnail</label>
+                        <div class="input-group">
+                          <input type="url" class="form-control" id="thumbnail" readonly>
+                          <button class="btn btn-outline-primary" type="button" id="viewThumbnailBtn">
+                            <i class="fas fa-eye me-1"></i>Visualizza
+                          </button>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div id="thumbnailPreview" class="mt-2">
+                          <!-- Thumbnail preview will be shown here -->
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Content & Tags Tab -->
+                  <div class="tab-pane fade" id="content-info" role="tabpanel">
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label for="categories" class="form-label">Categorie YouTube</label>
+                        <div id="categoriesDisplay" class="form-control" style="min-height: 38px; background-color: #f8f9fa;">
+                          <!-- Categories will be displayed here -->
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <label for="audioFile" class="form-label">File Audio</label>
+                        <input type="text" class="form-control" id="audioFile" name="audio_file" placeholder="URL o percorso del file audio" readonly>
+                        <div class="form-text">Campo gestito automaticamente dal sistema</div>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="summary" class="form-label">Riassunto AI</label>
+                      <textarea class="form-control" id="summary" name="summary" rows="3" placeholder="Riassunto generato automaticamente..." readonly></textarea>
+                      <div class="form-text">Riassunto generato automaticamente dal sistema</div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="tagsDisplay" class="form-label">Tag YouTube</label>
+                      <div id="tagsDisplay" class="border rounded p-2" style="min-height: 100px; background-color: #f8f9fa;">
+                        <!-- Tags will be displayed here -->
+                      </div>
+                      <div class="form-text">Tag estratti automaticamente da YouTube</div>
+                    </div>
+                    <div class="mb-3">
+                      <label for="transcript" class="form-label">Trascrizione</label>
+                      <textarea class="form-control" id="transcript" name="transcript" rows="4" readonly placeholder="Trascrizione automatica (se disponibile)"></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-3">
+                  <button type="button" class="btn btn-outline-secondary" id="resetFormBtn" title="Ripristina i valori originali" data-bs-toggle="tooltip" data-bs-placement="top">
+                    <i class="fas fa-undo"></i>
+                  </button>
+                  <button type="button" class="btn btn-primary" id="updateItemBtn" title="Aggiorna elemento con le modifiche" data-bs-toggle="tooltip" data-bs-placement="top">
+                    <i class="fas fa-check"></i>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Edit Modal -->
+  <div class="modal fade" id="bulkEditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Modifica Multipla</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>Seleziona i campi da modificare per tutti gli elementi selezionati.
+          </div>
+          <form id="bulkEditForm">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="bulkEditGenre">
+                  <label class="form-check-label" for="bulkEditGenre">Genere</label>
+                </div>
+                <input type="text" class="form-control mt-2" id="bulkGenre" placeholder="Nuovo genere" disabled>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="bulkEditLanguage">
+                  <label class="form-check-label" for="bulkEditLanguage">Lingua</label>
+                </div>
+                <select class="form-select mt-2" id="bulkLanguage" disabled>
+                  <option value="">Seleziona lingua</option>
+                  <option value="it">Italiano</option>
+                  <option value="en">Inglese</option>
+                  <option value="fr">Francese</option>
+                  <option value="de">Tedesco</option>
+                  <option value="es">Spagnolo</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="bulkEditProcessed">
+                <label class="form-check-label" for="bulkEditProcessed">Stato Processato</label>
+              </div>
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="radio" name="bulkProcessed" id="bulkProcessedTrue" value="true" disabled>
+                <label class="form-check-label" for="bulkProcessedTrue">Processato</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="bulkProcessed" id="bulkProcessedFalse" value="false" disabled>
+                <label class="form-check-label" for="bulkProcessedFalse">Non Processato</label>
+              </div>
+            </div>
+          </form>
+          <div class="mt-3">
+            <strong>Elementi selezionati: <span id="selectedItemsCount">0</span></strong>
+            <div id="selectedItemsList" class="mt-2 small text-muted" style="max-height: 100px; overflow-y: auto;">
+              <!-- Selected items will be listed here -->
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Annulla operazione" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-times"></i>
+          </button>
+          <button type="button" class="btn btn-primary" id="applyBulkEditBtn" title="Applica modifiche a tutti gli elementi selezionati" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-check"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div class="modal fade" id="exportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title"><i class="fas fa-download me-2"></i>Esporta Dati</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Formato di Esportazione</label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="exportFormat" id="exportJSON" value="json" checked>
+              <label class="form-check-label" for="exportJSON">
+                <i class="fas fa-code me-1"></i>JSON
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="exportFormat" id="exportCSV" value="csv">
+              <label class="form-check-label" for="exportCSV">
+                <i class="fas fa-table me-1"></i>CSV
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="exportFormat" id="exportXML" value="xml">
+              <label class="form-check-label" for="exportXML">
+                <i class="fas fa-file-code me-1"></i>XML
+              </label>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Dati da Esportare</label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="exportData" id="exportAll" value="all" checked>
+              <label class="form-check-label" for="exportAll">
+                Tutti i dati
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="exportData" id="exportFiltered" value="filtered">
+              <label class="form-check-label" for="exportFiltered">
+                Solo dati filtrati/cercati
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="exportData" id="exportModified" value="modified">
+              <label class="form-check-label" for="exportModified">
+                Solo elementi modificati
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Annulla esportazione" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-times"></i>
+          </button>
+          <button type="button" class="btn btn-success" id="downloadExportBtn" title="Scarica file esportato" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-download"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title"><i class="fab fa-youtube me-2"></i>Importa da YouTube</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+          <ul class="nav nav-tabs" id="importTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="single-video-tab" data-bs-toggle="tab" data-bs-target="#single-video" type="button" role="tab">
+                <i class="fas fa-video me-1"></i>Video Singolo
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="playlist-tab" data-bs-toggle="tab" data-bs-target="#playlist" type="button" role="tab">
+                <i class="fas fa-list me-1"></i>Playlist
+              </button>
+            </li>
+          </ul>
+          
+          <div class="tab-content mt-3" id="importTabsContent">
+            <!-- Single Video Import -->
+            <div class="tab-pane fade show active" id="single-video" role="tabpanel">
+              <form id="singleVideoForm">
+                <div class="mb-3">
+                  <label for="singleVideoUrl" class="form-label">URL del Video YouTube</label>
+                  <input type="url" class="form-control" id="singleVideoUrl" placeholder="https://www.youtube.com/watch?v=..." required>
+                  <div class="form-text">Inserisci l'URL di un video YouTube da importare come nuovo elemento</div>
+                </div>
+                
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="singleVideoType" class="form-label">Tipo Contenuto</label>
+                    <select class="form-select" id="singleVideoType" required>
+                      <option value="">Seleziona tipo</option>
+                      <option value="audiobook">Audiolibro</option>
+                      <option value="podcast">Podcast</option>
+                      <option value="series">Serie (Multi-parte)</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="singleVideoLanguage" class="form-label">Lingua</label>
+                    <select class="form-select" id="singleVideoLanguage" required>
+                      <option value="">Seleziona lingua</option>
+                      <option value="it">Italiano</option>
+                      <option value="en">Inglese</option>
+                      <option value="fr">Francese</option>
+                      <option value="de">Tedesco</option>
+                      <option value="es">Spagnolo</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="singleVideoGenre" class="form-label">Genere (opzionale)</label>
+                  <input type="text" class="form-control" id="singleVideoGenre" placeholder="es. Romanzo, Podcast, Saggistica...">
+                </div>
+                
+                <div class="mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="singleVideoProcessed">
+                    <label class="form-check-label" for="singleVideoProcessed">
+                      Segna come processato
+                    </label>
+                  </div>
+                </div>
+              </form>
+            </div>
+            
+            <!-- Playlist Import -->
+            <div class="tab-pane fade" id="playlist" role="tabpanel">
+              <form id="playlistForm">
+                <div class="mb-3">
+                  <label for="playlistUrl" class="form-label">URL della Playlist YouTube</label>
+                  <input type="url" class="form-control" id="playlistUrl" placeholder="https://www.youtube.com/playlist?list=..." required>
+                  <div class="form-text">Inserisci l'URL di una playlist YouTube per importare tutti i video</div>
+                </div>
+                
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="playlistType" class="form-label">Tipo Contenuto</label>
+                    <select class="form-select" id="playlistType" required>
+                      <option value="">Seleziona tipo</option>
+                      <option value="audiobook">Audiolibro</option>
+                      <option value="podcast">Podcast</option>
+                      <option value="series">Serie (Multi-parte)</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="playlistLanguage" class="form-label">Lingua</label>
+                    <select class="form-select" id="playlistLanguage" required>
+                      <option value="">Seleziona lingua</option>
+                      <option value="it">Italiano</option>
+                      <option value="en">Inglese</option>
+                      <option value="fr">Francese</option>
+                      <option value="de">Tedesco</option>
+                      <option value="es">Spagnolo</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="playlistGenre" class="form-label">Genere (opzionale)</label>
+                  <input type="text" class="form-control" id="playlistGenre" placeholder="es. Romanzo, Podcast, Saggistica...">
+                </div>
+                
+                <div class="mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="playlistProcessed">
+                    <label class="form-check-label" for="playlistProcessed">
+                      Segna tutti come processati
+                    </label>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="createSeries" checked>
+                    <label class="form-check-label" for="createSeries">
+                      Crea come serie collegata (per audiolibri multi-parte)
+                    </label>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          <!-- Import Progress -->
+          <div id="importProgress" class="mt-3" style="display: none;">
+            <div class="progress">
+              <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+            </div>
+            <div class="text-center mt-2">
+              <small id="importStatus">Inizializzazione...</small>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Annulla importazione" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-times"></i>
+          </button>
+          <button type="button" class="btn btn-warning" id="importSingleVideoBtn" title="Importa video da YouTube" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-download"></i>
+          </button>
+          <button type="button" class="btn btn-warning" id="importPlaylistBtn" style="display: none;">
+            <i class="fas fa-download me-1"></i>Importa Playlist
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pull Request Modal -->
+  <div class="modal fade" id="prModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title"><i class="fab fa-github me-2"></i>Crea Pull Request</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+          <form id="prForm">
+            <div class="mb-3">
+              <label for="branchName" class="form-label">Nome Branch</label>
+              <input type="text" class="form-control" id="branchName" value="update-audiolibri-data">
+            </div>
+            <div class="mb-3">
+              <label for="commitMessage" class="form-label">Messaggio Commit</label>
+              <input type="text" class="form-control" id="commitMessage" value="Aggiorna dati audiolibri">
+            </div>
+            <div class="mb-3">
+              <label for="prTitle" class="form-label">Titolo PR</label>
+              <input type="text" class="form-control" id="prTitle" value="Aggiorna dati audiolibri">
+            </div>
+            <div class="mb-3">
+              <label for="prDescription" class="form-label">Descrizione PR</label>
+              <textarea class="form-control" id="prDescription" rows="3">Questa PR aggiorna i dati degli audiolibri con nuove modifiche.</textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Annulla operazione" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-times"></i>
+          </button>
+          <button type="button" class="btn btn-primary" id="submitPrBtn" title="Invia Pull Request" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i>Successo!</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+          <p>Pull request creata con successo!</p>
+          <p>Puoi visualizzarla qui: <a href="#" id="prLink" target="_blank" class="btn btn-sm btn-outline-primary" title="Visualizza Pull Request su GitHub" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fab fa-github"></i>
+          </a></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" data-bs-dismiss="modal" title="Chiudi finestra" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-check"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Modal -->
+  <div class="modal fade" id="helpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title"><i class="fas fa-question-circle me-2"></i>Guida Completa all'Editor Audiolibri</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="nav flex-column nav-pills" id="help-tab" role="tablist" aria-orientation="vertical">
+                <button class="nav-link active" id="help-overview-tab" data-bs-toggle="pill" data-bs-target="#help-overview" type="button" role="tab">
+                  <i class="fas fa-home me-2"></i>Panoramica
+                </button>
+                <button class="nav-link" id="help-search-tab" data-bs-toggle="pill" data-bs-target="#help-search" type="button" role="tab">
+                  <i class="fas fa-search me-2"></i>Ricerca e Filtri
+                </button>
+                <button class="nav-link" id="help-edit-tab" data-bs-toggle="pill" data-bs-target="#help-edit" type="button" role="tab">
+                  <i class="fas fa-edit me-2"></i>Modifica Elementi
+                </button>
+                <button class="nav-link" id="help-bulk-tab" data-bs-toggle="pill" data-bs-target="#help-bulk" type="button" role="tab">
+                  <i class="fas fa-layer-group me-2"></i>Operazioni Multiple
+                </button>
+                <button class="nav-link" id="help-genres-tab" data-bs-toggle="pill" data-bs-target="#help-genres" type="button" role="tab">
+                  <i class="fas fa-tags me-2"></i>Gestione Generi
+                </button>
+                <button class="nav-link" id="help-import-tab" data-bs-toggle="pill" data-bs-target="#help-import" type="button" role="tab">
+                  <i class="fab fa-youtube me-2"></i>Importazione
+                </button>
+                <button class="nav-link" id="help-export-tab" data-bs-toggle="pill" data-bs-target="#help-export" type="button" role="tab">
+                  <i class="fas fa-download me-2"></i>Esportazione
+                </button>
+                <button class="nav-link" id="help-github-tab" data-bs-toggle="pill" data-bs-target="#help-github" type="button" role="tab">
+                  <i class="fab fa-github me-2"></i>GitHub & PR
+                </button>
+                <button class="nav-link" id="help-shortcuts-tab" data-bs-toggle="pill" data-bs-target="#help-shortcuts" type="button" role="tab">
+                  <i class="fas fa-keyboard me-2"></i>Scorciatoie
+                </button>
+                <button class="nav-link" id="help-jsoneditor-tab" data-bs-toggle="pill" data-bs-target="#help-jsoneditor" type="button" role="tab">
+                  <i class="fas fa-table me-2"></i>Editor JSON
+                </button>
+              </div>
+            </div>
+            <div class="col-md-9">
+              <div class="tab-content" id="help-tabContent">
+                <!-- Overview Tab -->
+                <div class="tab-pane fade show active" id="help-overview" role="tabpanel">
+                  <h4><i class="fas fa-home me-2 text-info"></i>Benvenuto nell'Editor Audiolibri</h4>
+                  <p class="lead">Questo strumento ti permette di gestire facilmente il database degli audiolibri con un'interfaccia web moderna e intuitiva.</p>
+                  
+                  <div class="row mt-4">
+                    <div class="col-md-6">
+                      <div class="card h-100">
+                        <div class="card-body">
+                          <h5 class="card-title"><i class="fas fa-chart-line me-2 text-primary"></i>Dashboard</h5>
+                          <p class="card-text">Visualizza statistiche in tempo reale su tutti gli elementi del database, inclusi totali, processati, in attesa e modificati.</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="card h-100">
+                        <div class="card-body">
+                          <h5 class="card-title"><i class="fas fa-sync me-2 text-success"></i>Sincronizzazione</h5>
+                          <p class="card-text">Tutte le modifiche vengono salvate localmente e poi inviate a GitHub tramite Pull Request per un controllo collaborativo.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="alert alert-info mt-4">
+                    <h6><i class="fas fa-lightbulb me-2"></i>Flusso di Lavoro Consigliato:</h6>
+                    <ol class="mb-0">
+                      <li><strong>Cerca</strong> gli elementi da modificare usando filtri e ricerca</li>
+                      <li><strong>Modifica</strong> i dettagli necessari uno per uno o in gruppo</li>
+                      <li><strong>Gestisci</strong> i generi per mantenere consistenza</li>
+                      <li><strong>Salva</strong> le modifiche creando una Pull Request</li>
+                    </ol>
+                  </div>
+                </div>
+
+                <!-- Search Tab -->
+                <div class="tab-pane fade" id="help-search" role="tabpanel">
+                  <h4><i class="fas fa-search me-2 text-info"></i>Ricerca e Filtri Avanzati</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Barra di Ricerca</strong></div>
+                    <div class="card-body">
+                      <p><strong>Cosa puoi cercare:</strong></p>
+                      <ul>
+                        <li><strong>Titolo:</strong> Cerca per titolo del libro/audiolibro</li>
+                        <li><strong>Autore:</strong> Trova opere di un autore specifico</li>
+                        <li><strong>Genere:</strong> Filtra per categoria letteraria</li>
+                      </ul>
+                      <p><strong>Suggerimenti:</strong></p>
+                      <ul>
+                        <li>Usa parole parziali (es. "giallo" trova "Il giallo della rosa")</li>
+                        <li>La ricerca non è case-sensitive</li>
+                        <li>Premi <kbd>Invio</kbd> o clicca il pulsante per cercare</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Filtri Rapidi</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6>Filtro per Genere</h6>
+                          <p>Seleziona un genere specifico dal menu a discesa per vedere solo gli elementi di quella categoria.</p>
+                        </div>
+                        <div class="col-md-6">
+                          <h6>Filtro per Stato</h6>
+                          <ul class="list-unstyled">
+                            <li><span class="badge bg-success">Processati</span> - Elementi completati</li>
+                            <li><span class="badge bg-warning">In Attesa</span> - Elementi da processare</li>
+                            <li><span class="badge bg-danger">Modificati</span> - Elementi con modifiche locali</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="alert alert-success">
+                    <h6><i class="fas fa-magic me-2"></i>Trucchi per la Ricerca:</h6>
+                    <ul class="mb-0">
+                      <li>Combina ricerca testuale e filtri per risultati precisi</li>
+                      <li>Usa il filtro "Modificati" per vedere le tue modifiche recenti</li>
+                      <li>Svuota i filtri con il pulsante <kbd>X</kbd> per tornare alla vista completa</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Edit Tab -->
+                <div class="tab-pane fade" id="help-edit" role="tabpanel">
+                  <h4><i class="fas fa-edit me-2 text-info"></i>Modifica Elementi</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Processo di Modifica</strong></div>
+                    <div class="card-body">
+                      <ol>
+                        <li><strong>Seleziona un elemento</strong> dalla lista a sinistra</li>
+                        <li><strong>Modifica i campi</strong> nel pannello di destra</li>
+                        <li><strong>Clicca "Aggiorna Elemento"</strong> per salvare localmente</li>
+                        <li><strong>Ripeti</strong> per altri elementi se necessario</li>
+                        <li><strong>Usa "Salva Modifiche"</strong> per creare la Pull Request</li>
+                      </ol>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Campi Disponibili</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6>Informazioni Base</h6>
+                          <ul>
+                            <li><strong>Titolo:</strong> Nome dell'opera</li>
+                            <li><strong>Autore:</strong> Scrittore/creatore</li>
+                            <li><strong>Genere:</strong> Categoria letteraria</li>
+                            <li><strong>Tipo Contenuto:</strong> Audiolibro, Podcast, Serie</li>
+                            <li><strong>Lingua:</strong> Lingua dell'opera</li>
+                          </ul>
+                        </div>
+                        <div class="col-md-6">
+                          <h6>Dettagli Aggiuntivi</h6>
+                          <ul>
+                            <li><strong>Sinossi:</strong> Descrizione dell'opera (max 500 caratteri)</li>
+                            <li><strong>Durata:</strong> Lunghezza in minuti</li>
+                            <li><strong>Anno Pubblicazione:</strong> Anno di rilascio</li>
+                            <li><strong>Narratore:</strong> Chi legge l'audiolibro</li>
+                            <li><strong>Processato:</strong> Stato di completamento</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Validazione Automatica:</h6>
+                    <p class="mb-0">Il sistema valida automaticamente i dati inseriti e ti avviserà di eventuali errori prima del salvataggio. I campi con errori saranno evidenziati in rosso con messaggi specifici.</p>
+                  </div>
+                </div>
+
+                <!-- Bulk Operations Tab -->
+                <div class="tab-pane fade" id="help-bulk" role="tabpanel">
+                  <h4><i class="fas fa-layer-group me-2 text-info"></i>Operazioni Multiple</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Selezione Multipla</strong></div>
+                    <div class="card-body">
+                      <ol>
+                        <li><strong>Usa le checkbox</strong> accanto a ogni elemento per selezionare</li>
+                        <li><strong>Seleziona tutto/nulla</strong> con i pulsanti in alto</li>
+                        <li><strong>Clicca "Modifica Multipla"</strong> nella barra di navigazione</li>
+                        <li><strong>Scegli i campi</strong> da modificare per tutti gli elementi selezionati</li>
+                      </ol>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Campi Modificabili in Gruppo</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-4">
+                          <div class="text-center">
+                            <i class="fas fa-tags fa-2x text-primary mb-2"></i>
+                            <h6>Genere</h6>
+                            <p class="small">Cambia il genere per tutti gli elementi selezionati</p>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="text-center">
+                            <i class="fas fa-language fa-2x text-success mb-2"></i>
+                            <h6>Lingua</h6>
+                            <p class="small">Imposta la lingua per più elementi contemporaneamente</p>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="text-center">
+                            <i class="fas fa-check-circle fa-2x text-warning mb-2"></i>
+                            <h6>Stato Processato</h6>
+                            <p class="small">Marca come processato/non processato in blocco</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="alert alert-info">
+                    <h6><i class="fas fa-lightbulb me-2"></i>Quando Usare le Operazioni Multiple:</h6>
+                    <ul class="mb-0">
+                      <li>Correggere generi errati su più elementi</li>
+                      <li>Impostare la lingua per importazioni da YouTube</li>
+                      <li>Marcare come processati gruppi di elementi completati</li>
+                      <li>Standardizzare dati simili su più opere</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Genres Tab -->
+                <div class="tab-pane fade" id="help-genres" role="tabpanel">
+                  <h4><i class="fas fa-tags me-2 text-info"></i>Gestione Generi Avanzata</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Panoramica Generi</strong></div>
+                    <div class="card-body">
+                      <p>La gestione generi ti aiuta a mantenere un database pulito e organizzato, rilevando automaticamente problemi comuni:</p>
+                      <div class="row">
+                        <div class="col-md-6">
+                          <ul>
+                            <li><strong>Duplicati potenziali:</strong> "Romanzo" vs "Romanzi"</li>
+                            <li><strong>Errori di battitura:</strong> "Fantascenca" invece di "Fantascienza"</li>
+                            <li><strong>Variazioni:</strong> "Giallo" vs "Gialli" vs "Noir"</li>
+                          </ul>
+                        </div>
+                        <div class="col-md-6">
+                          <ul>
+                            <li><strong>Generi vuoti:</strong> Elementi senza genere assegnato</li>
+                            <li><strong>Generi singoli:</strong> Usati solo una volta</li>
+                            <li><strong>Standardizzazione:</strong> Nomi uniformi</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Operazioni Disponibili</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6><i class="fas fa-compress-alt me-2 text-warning"></i>Unire Generi</h6>
+                          <ol>
+                            <li>Seleziona 2+ generi simili</li>
+                            <li>Clicca "Unisci Selezionati"</li>
+                            <li>Scegli o inserisci il nome finale</li>
+                            <li>Conferma l'operazione</li>
+                          </ol>
+                        </div>
+                        <div class="col-md-6">
+                          <h6><i class="fas fa-edit me-2 text-primary"></i>Modificare Singoli Generi</h6>
+                          <ol>
+                            <li>Clicca l'icona matita sul genere</li>
+                            <li>Inserisci il nuovo nome</li>
+                            <li>Il sistema aggiorna tutti gli elementi</li>
+                            <li>Le modifiche sono automatiche</li>
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="alert alert-success">
+                    <h6><i class="fas fa-magic me-2"></i>Rilevamento Automatico Intelligente:</h6>
+                    <p class="mb-0">Il sistema usa algoritmi avanzati per identificare generi simili basandosi su: distanza di Levenshtein, pattern comuni (plurali, terminazioni italiane), sottostringhe condivise, e variazioni tipografiche.</p>
+                  </div>
+                </div>
+
+                <!-- Import Tab -->
+                <div class="tab-pane fade" id="help-import" role="tabpanel">
+                  <h4><i class="fab fa-youtube me-2 text-info"></i>Importazione da YouTube</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Video Singolo</strong></div>
+                    <div class="card-body">
+                      <ol>
+                        <li><strong>Copia l'URL</strong> del video YouTube</li>
+                        <li><strong>Incolla nell'apposito campo</strong> nella scheda "Video Singolo"</li>
+                        <li><strong>Seleziona tipo contenuto:</strong> Audiolibro, Podcast, o Serie</li>
+                        <li><strong>Imposta la lingua</strong> del contenuto</li>
+                        <li><strong>Aggiungi genere</strong> (opzionale ma consigliato)</li>
+                        <li><strong>Clicca "Importa Video"</strong></li>
+                      </ol>
+                      <div class="alert alert-info">
+                        <small><i class="fas fa-info-circle me-1"></i>Il sistema estrae automaticamente: titolo, autore/canale, descrizione, durata, data pubblicazione, thumbnail, visualizzazioni e likes.</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Playlist Completa</strong></div>
+                    <div class="card-body">
+                      <ol>
+                        <li><strong>Copia l'URL</strong> della playlist YouTube</li>
+                        <li><strong>Vai alla scheda "Playlist"</strong></li>
+                        <li><strong>Incolla l'URL</strong> e configura i parametri</li>
+                        <li><strong>Opzione "Crea come serie":</strong> Collega tutti i video come serie numerata</li>
+                        <li><strong>Clicca "Importa Playlist"</strong></li>
+                      </ol>
+                      <div class="alert alert-warning">
+                        <small><i class="fas fa-clock me-1"></i>L'importazione di playlist grandi può richiedere alcuni minuti. Il sistema processa ogni video individualmente.</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card">
+                    <div class="card-header"><strong>Formati URL Supportati</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6>Video Singoli</h6>
+                          <code class="d-block mb-1">youtube.com/watch?v=...</code>
+                          <code class="d-block mb-1">youtu.be/...</code>
+                          <code class="d-block">youtube.com/embed/...</code>
+                        </div>
+                        <div class="col-md-6">
+                          <h6>Playlist</h6>
+                          <code class="d-block mb-1">youtube.com/playlist?list=...</code>
+                          <code class="d-block">youtube.com/watch?list=...</code>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Export Tab -->
+                <div class="tab-pane fade" id="help-export" role="tabpanel">
+                  <h4><i class="fas fa-download me-2 text-info"></i>Esportazione Dati</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Formati Disponibili</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-4">
+                          <div class="text-center">
+                            <i class="fas fa-file-code fa-2x text-primary mb-2"></i>
+                            <h6>JSON</h6>
+                            <p class="small">Formato strutturato per sviluppatori e backup completi</p>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="text-center">
+                            <i class="fas fa-file-csv fa-2x text-success mb-2"></i>
+                            <h6>CSV</h6>
+                            <p class="small">Per Excel, Google Sheets e analisi dati</p>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="text-center">
+                            <i class="fas fa-file-alt fa-2x text-warning mb-2"></i>
+                            <h6>XML</h6>
+                            <p class="small">Per sistemi legacy e integrazioni specifiche</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Opzioni di Esportazione</strong></div>
+                    <div class="card-body">
+                      <ul>
+                        <li><strong>Tutti i dati:</strong> Esporta l'intero database</li>
+                        <li><strong>Solo dati filtrati:</strong> Esporta solo i risultati della ricerca/filtri attuali</li>
+                        <li><strong>Solo elementi modificati:</strong> Esporta solo le tue modifiche locali</li>
+                      </ul>
+                      <div class="alert alert-info">
+                        <small><i class="fas fa-download me-1"></i>Il file viene generato automaticamente e scaricato nel browser. Utile per backup, analisi o condivisione con collaboratori.</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- GitHub Tab -->
+                <div class="tab-pane fade" id="help-github" role="tabpanel">
+                  <h4><i class="fab fa-github me-2 text-info"></i>Integrazione GitHub</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Processo Pull Request</strong></div>
+                    <div class="card-body">
+                      <ol>
+                        <li><strong>Effettua le modifiche</strong> usando l'editor</li>
+                        <li><strong>Clicca "Salva Modifiche"</strong> nella barra di navigazione</li>
+                        <li><strong>Compila i dettagli PR:</strong>
+                          <ul>
+                            <li><strong>Nome Branch:</strong> Generato automaticamente con timestamp</li>
+                            <li><strong>Messaggio Commit:</strong> Descrizione breve delle modifiche</li>
+                            <li><strong>Titolo PR:</strong> Titolo per la Pull Request</li>
+                            <li><strong>Descrizione PR:</strong> Dettagli automatici delle modifiche</li>
+                          </ul>
+                        </li>
+                        <li><strong>Clicca "Invia PR"</strong> per creare la Pull Request</li>
+                      </ol>
+                    </div>
+                  </div>
+
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Cosa Succede Dopo</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6><i class="fas fa-code-branch me-2 text-primary"></i>Creazione Branch</h6>
+                          <p>Il sistema crea automaticamente un nuovo branch con le tue modifiche, mantenendo il branch principale pulito.</p>
+                        </div>
+                        <div class="col-md-6">
+                          <h6><i class="fas fa-eye me-2 text-success"></i>Revisione</h6>
+                          <p>Altri collaboratori possono revisionare le modifiche prima che vengano integrate nel database principale.</p>
+                        </div>
+                      </div>
+                      <div class="alert alert-success">
+                        <h6><i class="fas fa-link me-2"></i>Link alla PR</h6>
+                        <p class="mb-0">Dopo la creazione, riceverai un link diretto alla Pull Request su GitHub dove puoi monitorare lo stato e rispondere a eventuali commenti.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Shortcuts Tab -->
+                <div class="tab-pane fade" id="help-shortcuts" role="tabpanel">
+                  <h4><i class="fas fa-keyboard me-2 text-info"></i>Scorciatoie da Tastiera</h4>
+                  
+                  <div class="card mb-3">
+                    <div class="card-header"><strong>Navigazione Generale</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <table class="table table-sm">
+                            <tbody>
+                              <tr>
+                                <td><kbd>Ctrl/Cmd + F</kbd></td>
+                                <td>Focalizza barra di ricerca</td>
+                              </tr>
+                              <tr>
+                                <td><kbd>Ctrl/Cmd + S</kbd></td>
+                                <td>Salva modifiche (apre modal PR)</td>
+                              </tr>
+                              <tr>
+                                <td><kbd>Ctrl/Cmd + Z</kbd></td>
+                                <td>Annulla ultima modifica</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div class="col-md-6">
+                          <table class="table table-sm">
+                            <tbody>
+                              <tr>
+                                <td><kbd>Invio</kbd></td>
+                                <td>Esegui ricerca</td>
+                              </tr>
+                              <tr>
+                                <td><kbd>Esc</kbd></td>
+                                <td>Chiudi modal attivo</td>
+                              </tr>
+                              <tr>
+                                <td><kbd>Tab</kbd></td>
+                                <td>Naviga tra i campi del form</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card">
+                    <div class="card-header"><strong>Suggerimenti per la Produttività</strong></div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6><i class="fas fa-mouse me-2 text-primary"></i>Mouse + Tastiera</h6>
+                          <ul>
+                            <li>Usa <kbd>Ctrl/Cmd + Click</kbd> per aprire link in nuove schede</li>
+                            <li>Scorri con la rotella del mouse nelle liste lunghe</li>
+                            <li>Doppio click per selezionare rapidamente il testo</li>
+                          </ul>
+                        </div>
+                        <div class="col-md-6">
+                          <h6><i class="fas fa-bolt me-2 text-warning"></i>Flusso Rapido</h6>
+                          <ol>
+                            <li><kbd>Ctrl/Cmd + F</kbd> → cerca elemento</li>
+                            <li>Click sull'elemento → modifica</li>
+                            <li><kbd>Tab</kbd> per spostarsi tra campi</li>
+                            <li><kbd>Ctrl/Cmd + S</kbd> → salva tutto</li>
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-info text-white" data-bs-dismiss="modal">
+            <i class="fas fa-check me-1"></i>Ho Capito - Iniziamo!
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Genre Management Modal -->
+  <div class="modal fade" id="genreManagementModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title"><i class="fas fa-tags me-2"></i>Gestione Generi</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-md-8">
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Gestisci tutti i generi presenti nel database. Puoi unire generi simili, correggere errori di battitura e standardizzare i nomi.
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-grid gap-2">
+                <button type="button" class="btn btn-primary" id="refreshGenresBtn">
+                  <i class="fas fa-sync me-1"></i>Aggiorna Lista
+                </button>
+                <button type="button" class="btn btn-success" id="addGenreBtn">
+                  <i class="fas fa-plus me-1"></i>Aggiungi Genere
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Genre Statistics -->
+          <div class="row mb-4">
+            <div class="col-md-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h5 class="text-primary mb-0" id="totalGenresCount">-</h5>
+                  <small class="text-muted">Generi Totali</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h5 class="text-success mb-0" id="usedGenresCount">-</h5>
+                  <small class="text-muted">Generi in Uso</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h5 class="text-warning mb-0" id="suspiciousGenresCount">-</h5>
+                  <small class="text-muted">Potenziali Duplicati</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card text-center">
+                <div class="card-body">
+                  <h5 class="text-danger mb-0" id="emptyGenresCount">-</h5>
+                  <small class="text-muted">Generi Vuoti</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search and Filter -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <div class="input-group">
+                <input type="text" id="genreSearchInput" class="form-control" placeholder="Cerca generi...">
+                <button class="btn btn-outline-secondary" id="clearGenreSearchBtn">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <select class="form-select" id="genreFilterSelect">
+                <option value="">Tutti i Generi</option>
+                <option value="duplicates">Potenziali Duplicati</option>
+                <option value="empty">Generi Vuoti</option>
+                <option value="single">Usati una volta</option>
+                <option value="popular">Più Popolari</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select class="form-select" id="genreSortSelect">
+                <option value="name">Ordina per Nome</option>
+                <option value="count">Ordina per Utilizzo</option>
+                <option value="recent">Modificati di Recente</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Bulk Actions -->
+          <div class="mb-3">
+            <div class="btn-group" role="group">
+              <button type="button" class="btn btn-outline-primary" id="selectAllGenresBtn">
+                <i class="fas fa-check-square me-1"></i>Seleziona Tutti
+              </button>
+              <button type="button" class="btn btn-outline-secondary" id="clearGenreSelectionBtn">
+                <i class="fas fa-square me-1"></i>Deseleziona Tutti
+              </button>
+              <button type="button" class="btn btn-outline-warning" id="mergeGenresBtn" disabled>
+                <i class="fas fa-compress-alt me-1"></i>Unisci Selezionati
+              </button>
+              <button type="button" class="btn btn-outline-danger" id="deleteGenresBtn" disabled>
+                <i class="fas fa-trash me-1"></i>Elimina Selezionati
+              </button>
+            </div>
+            <span class="ms-3 text-muted">
+              <span id="selectedGenresCount">0</span> generi selezionati
+            </span>
+          </div>
+
+          <!-- Genres List -->
+          <div class="card">
+            <div class="card-header">
+              <h6 class="mb-0">Lista Generi</h6>
+            </div>
+            <div class="card-body p-0">
+              <div id="genresList" style="max-height: 400px; overflow-y: auto;">
+                <!-- Genres will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Chiudi gestione generi" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-times"></i>
+          </button>
+          <button type="button" class="btn btn-primary" id="applyGenreChangesBtn" disabled title="Applica modifiche ai generi" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-save"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Merge Genres Modal -->
+  <div class="modal fade" id="mergeGenresModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title"><i class="fas fa-compress-alt me-2"></i>Unisci Generi</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Stai per unire i generi selezionati. Questa azione modificherà tutti gli elementi che usano questi generi.
+          </div>
+          
+          <div class="mb-3">
+            <label for="targetGenreName" class="form-label">Nome del genere finale:</label>
+            <input type="text" class="form-control" id="targetGenreName" placeholder="Inserisci il nome del genere finale">
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Generi da unire:</label>
+            <div id="mergeGenresList" class="border rounded p-2 bg-light">
+              <!-- Selected genres will be listed here -->
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="deleteAfterMerge" checked>
+              <label class="form-check-label" for="deleteAfterMerge">
+                Elimina i generi originali dopo l'unione
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Annulla unione generi" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-times"></i>
+          </button>
+          <button type="button" class="btn btn-warning" id="confirmMergeBtn" title="Conferma unione dei generi selezionati" data-bs-toggle="tooltip" data-bs-placement="top">
+            <i class="fas fa-compress-alt"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Welcome Modal -->
+  <div class="modal fade" id="welcomeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h4 class="modal-title">
+            <i class="fas fa-rocket me-2"></i>Benvenuto nell'Editor Audiolibri!
+          </h4>
+        </div>
+        <div class="modal-body">
+          <div class="text-center mb-4">
+            <i class="fas fa-headphones display-1 text-primary mb-3"></i>
+            <h5>Cosa desideri fare oggi?</h5>
+            <p class="text-muted">Scegli un'azione per iniziare a lavorare con la biblioteca audiolibri</p>
+          </div>
+          
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="card action-card h-100" data-action="edit-item" style="cursor: pointer;">
+                <div class="card-body text-center">
+                  <i class="fas fa-edit fa-2x text-success mb-3"></i>
+                  <h6>Modifica Singolo Elemento</h6>
+                  <p class="small text-muted mb-0">Cerca e modifica un audiolibro specifico</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="card action-card h-100" data-action="bulk-edit" style="cursor: pointer;">
+                <div class="card-body text-center">
+                  <i class="fas fa-layer-group fa-2x text-warning mb-3"></i>
+                  <h6>Modifica Multipla</h6>
+                  <p class="small text-muted mb-0">Modifica più elementi contemporaneamente</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="card action-card h-100" data-action="add-item" style="cursor: pointer;">
+                <div class="card-body text-center">
+                  <i class="fas fa-plus-circle fa-2x text-info mb-3"></i>
+                  <h6>Aggiungi Elemento</h6>
+                  <p class="small text-muted mb-0">Crea un nuovo audiolibro manualmente</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="card action-card h-100" data-action="import-youtube" style="cursor: pointer;">
+                <div class="card-body text-center">
+                  <i class="fab fa-youtube fa-2x text-danger mb-3"></i>
+                  <h6>Importa da YouTube</h6>
+                  <p class="small text-muted mb-0">Importa video o playlist da YouTube</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="card action-card h-100" data-action="json-editor" style="cursor: pointer;">
+                <div class="card-body text-center">
+                  <i class="fas fa-table fa-2x text-primary mb-3"></i>
+                  <h6>Editor JSON Completo</h6>
+                  <p class="small text-muted mb-0">Visualizza e modifica tutto il database</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="card action-card h-100" data-action="manage-genres" style="cursor: pointer;">
+                <div class="card-body text-center">
+                  <i class="fas fa-tags fa-2x text-secondary mb-3"></i>
+                  <h6>Gestione Generi</h6>
+                  <p class="small text-muted mb-0">Organizza e pulisci i generi</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="alert alert-info mt-4">
+            <div class="d-flex align-items-start">
+              <i class="fas fa-info-circle me-2 mt-1"></i>
+              <div>
+                <strong>Suggerimento:</strong> Tutte queste funzioni sono sempre disponibili dalla barra di navigazione. 
+                Puoi anche usare <kbd>Ctrl+F</kbd> per cercare rapidamente un elemento.
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-check mt-3">
+            <input class="form-check-input" type="checkbox" id="dontShowWelcome">
+            <label class="form-check-label" for="dontShowWelcome">
+              Non mostrare più questo messaggio
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>Chiudi
+          </button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+            <i class="fas fa-check me-1"></i>Inizia Subito
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="script.js"></script>
+  <script src="genre-management.js"></script>
+  <script src="ux-enhancements.js"></script>
+</body>
+</html>
