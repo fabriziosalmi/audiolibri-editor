@@ -608,6 +608,54 @@ body {
   outline: none;
 }
 
+/* Read-only field styling for YouTube metadata and content fields */
+.form-control[readonly],
+.form-select[readonly],
+textarea[readonly],
+input[readonly] {
+  background-color: var(--gray-100) !important;
+  color: var(--gray-600) !important;
+  border-color: var(--gray-300) !important;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.form-control[readonly]:focus,
+.form-select[readonly]:focus,
+textarea[readonly]:focus,
+input[readonly]:focus {
+  background-color: var(--gray-100) !important;
+  color: var(--gray-600) !important;
+  border-color: var(--gray-300) !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+/* Special styling for readonly divs (like categories and tags display) */
+#categoriesDisplay,
+#tagsDisplay {
+  background-color: var(--gray-100) !important;
+  color: var(--gray-600) !important;
+  border-color: var(--gray-300) !important;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+/* Placeholder text styling for readonly fields */
+.form-control[readonly]::placeholder,
+textarea[readonly]::placeholder,
+input[readonly]::placeholder {
+  color: var(--gray-500) !important;
+  opacity: 0.7;
+}
+
+/* Read-only field labels get slightly muted styling */
+.tab-pane#metadata-info .form-label,
+.tab-pane#content-info .form-label {
+  color: var(--gray-600);
+  opacity: 0.9;
+}
+
 .form-label {
   font-weight: 500;
   color: var(--gray-700);

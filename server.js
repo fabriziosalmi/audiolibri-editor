@@ -610,57 +610,113 @@ app.post('/api/data/auto-save', async (req, res) => {
 
 // Save changes from JSON editor
 app.post('/api/data/save', async (req, res) => {
+  const startTime = Date.now();
   try {
     const changes = req.body;
+    
+    console.log(`JSON Editor Save: Starting save process with ${Object.keys(changes).length} changed items`);
     
     if (!changes || Object.keys(changes).length === 0) {
       return res.status(400).json({ success: false, error: 'No changes provided' });
     }
 
     // Fetch current data
-    const response = await axios.get('https://raw.githubusercontent.com/fabriziosalmi/audiolibri/refs/heads/main/augmented.json');
+    console.log('JSON Editor Save: Step 1 - Fetching current data...');
+    const fetchStart = Date.now();
+    const response = await axios.get('https://raw.githubusercontent.com/fabriziosalmi/audiolibri/refs/heads/main/augmented.json', {
+      timeout: 10000 // 10 second timeout for fetching data
+    });
     const currentData = response.data;
+    
+    if (!currentData || typeof currentData !== 'object') {
+      throw new Error('Invalid data format received from repository');
+    }
+    
+    console.log(`JSON Editor Save: Step 1 completed in ${Date.now() - fetchStart}ms`);
 
     // Apply changes
+    console.log('JSON Editor Save: Step 2 - Applying changes...');
+    const applyStart = Date.now();
+    let actualChangesCount = 0;
+    
     Object.entries(changes).forEach(([itemId, fieldChanges]) => {
       if (currentData[itemId]) {
+        const originalItem = currentData[itemId];
+        let hasActualChanges = false;
+        
+        // Only apply changes that are actually different
         Object.entries(fieldChanges).forEach(([field, newValue]) => {
-          currentData[itemId][field] = newValue;
+          if (originalItem[field] !== newValue) {
+            currentData[itemId][field] = newValue;
+            hasActualChanges = true;
+          }
         });
+        
+        if (hasActualChanges) {
+          actualChangesCount++;
+        }
+      } else {
+        console.warn(`JSON Editor Save: Item with ID ${itemId} not found in current data`);
       }
     });
+    
+    if (actualChangesCount === 0) {
+      console.log('JSON Editor Save: No actual changes detected, skipping GitHub operations');
+      return res.json({
+        success: true,
+        message: 'No changes needed - data is already up to date',
+        changesCount: 0,
+        skipped: true
+      });
+    }
+    
+    console.log(`JSON Editor Save: Step 2 completed in ${Date.now() - applyStart}ms - ${actualChangesCount} actual changes`);
 
     // Create branch name
     const branchName = `json-editor-update-${Date.now()}`;
     
     // Get the main branch
+    console.log('JSON Editor Save: Step 3 - Getting main branch info...');
+    const branchStart = Date.now();
     const { data: mainBranch } = await octokit.rest.repos.getBranch({
       owner: process.env.REPO_OWNER,
       repo: process.env.REPO_NAME,
       branch: 'main'
     });
+    console.log(`JSON Editor Save: Step 3 completed in ${Date.now() - branchStart}ms`);
 
     // Create new branch
+    console.log(`JSON Editor Save: Step 4 - Creating new branch: ${branchName}...`);
+    const createBranchStart = Date.now();
     await octokit.rest.git.createRef({
       owner: process.env.REPO_OWNER,
       repo: process.env.REPO_NAME,
       ref: `refs/heads/${branchName}`,
       sha: mainBranch.commit.sha
     });
+    console.log(`JSON Editor Save: Step 4 completed in ${Date.now() - createBranchStart}ms`);
 
     // Update file content
+    console.log('JSON Editor Save: Step 5 - Preparing file content...');
+    const contentStart = Date.now();
     const updatedContent = JSON.stringify(currentData, null, 2);
     const encodedContent = Buffer.from(updatedContent).toString('base64');
+    console.log(`JSON Editor Save: Step 5 completed in ${Date.now() - contentStart}ms`);
 
     // Get current file to get its SHA
+    console.log('JSON Editor Save: Step 6 - Getting current file info...');
+    const fileInfoStart = Date.now();
     const { data: currentFile } = await octokit.rest.repos.getContent({
       owner: process.env.REPO_OWNER,
       repo: process.env.REPO_NAME,
       path: 'augmented.json',
       ref: branchName
     });
+    console.log(`JSON Editor Save: Step 6 completed in ${Date.now() - fileInfoStart}ms`);
 
     // Update the file
+    console.log('JSON Editor Save: Step 7 - Updating file in branch...');
+    const updateFileStart = Date.now();
     await octokit.rest.repos.createOrUpdateFileContents({
       owner: process.env.REPO_OWNER,
       repo: process.env.REPO_NAME,
@@ -670,6 +726,7 @@ app.post('/api/data/save', async (req, res) => {
       sha: currentFile.sha,
       branch: branchName
     });
+    console.log(`JSON Editor Save: Step 7 completed in ${Date.now() - updateFileStart}ms`);
 
     // Create pull request
     const changesList = Object.entries(changes).map(([itemId, fieldChanges]) => {
@@ -691,6 +748,8 @@ ${changesList}
 
 Revisiona attentamente le modifiche prima del merge.`;
 
+    console.log('JSON Editor Save: Step 8 - Creating pull request...');
+    const prStart = Date.now();
     const { data: pullRequest } = await octokit.rest.pulls.create({
       owner: process.env.REPO_OWNER,
       repo: process.env.REPO_NAME,
@@ -699,8 +758,11 @@ Revisiona attentamente le modifiche prima del merge.`;
       base: 'main',
       body: prDescription
     });
+    console.log(`JSON Editor Save: Step 8 completed in ${Date.now() - prStart}ms`);
 
     // Generate data hash for client monitoring
+    console.log('JSON Editor Save: Step 9 - Generating data hash...');
+    const hashStart = Date.now();
     const jsonString = JSON.stringify(currentData);
     let hash = 0;
     for (let i = 0; i < Math.min(jsonString.length, 1000); i++) {
@@ -709,6 +771,10 @@ Revisiona attentamente le modifiche prima del merge.`;
       hash = hash & hash;
     }
     const dataHash = Math.abs(hash) + '_' + jsonString.length + '_' + Date.now();
+    console.log(`JSON Editor Save: Step 9 completed in ${Date.now() - hashStart}ms`);
+
+    const totalTime = Date.now() - startTime;
+    console.log(`JSON Editor Save: Total operation completed in ${totalTime}ms`);
 
     res.json({
       success: true,
@@ -720,6 +786,7 @@ Revisiona attentamente le modifiche prima del merge.`;
     });
 
   } catch (error) {
+    console.error('JSON Editor Save: Error occurred after', Date.now() - startTime, 'ms:', error);
     console.error('Error saving JSON editor changes:', error);
     res.status(500).json({ 
       success: false, 

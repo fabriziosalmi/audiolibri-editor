@@ -18,15 +18,6 @@ class JSONEditor {
     };
     this.autoSaveTimeout = null;
     this.editingCell = null;
-    this.lastDataHash = null;
-    this.monitoringInterval = null;
-    this.isMonitoring = false;
-    
-    // Configurable monitoring settings
-    this.monitoringIntervalMinutes = parseInt(localStorage.getItem('monitoringInterval')) || 5; // Default 5 minutes
-    this.lastCheckTime = null;
-    this.nextCheckTime = null;
-    this.countdownInterval = null;
     
     this.selectedItems = new Set(); // Track selected items for bulk operations
     
@@ -38,7 +29,6 @@ class JSONEditor {
       this.showLoading();
       await this.loadData();
       this.setupEventListeners();
-      this.startMonitoring();
     } catch (error) {
       console.error('Error initializing JSON Editor:', error);
       this.showError('Errore durante l\'inizializzazione dell\'editor: ' + error.message);
@@ -90,6 +80,19 @@ class JSONEditor {
       this.extractColumns();
       this.updateUI();
     }
+  }
+
+  generateDataHash(data) {
+    // Generate a simple hash based on content length and timestamp (same as server implementation)
+    const jsonString = JSON.stringify(data);
+    let hash = 0;
+    for (let i = 0; i < Math.min(jsonString.length, 1000); i++) {
+      const char = jsonString.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    const safeHash = Math.abs(hash) + '_' + jsonString.length + '_' + Date.now();
+    return safeHash;
   }
 
   extractColumns() {
@@ -343,7 +346,7 @@ class JSONEditor {
     // Previous button
     paginationHTML += `
       <li class="page-item ${this.currentPage === 1 ? 'disabled' : ''}">
-        <a class="page-link" href="#" onclick="window.jsonEditor.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'tabindex="-1"' : ''}>
+        <a class="page-link" href="#" data-page="${this.currentPage - 1}" ${this.currentPage === 1 ? 'tabindex="-1"' : ''}>
           <i class="fas fa-chevron-left"></i>
         </a>
       </li>
@@ -354,7 +357,7 @@ class JSONEditor {
     const endPage = Math.min(totalPages, this.currentPage + 2);
     
     if (startPage > 1) {
-      paginationHTML += `<li class="page-item"><a class="page-link" href="#" onclick="window.jsonEditor.goToPage(1)">1</a></li>`;
+      paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
       if (startPage > 2) {
         paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
       }
@@ -363,7 +366,7 @@ class JSONEditor {
     for (let i = startPage; i <= endPage; i++) {
       paginationHTML += `
         <li class="page-item ${i === this.currentPage ? 'active' : ''}">
-          <a class="page-link" href="#" onclick="window.jsonEditor.goToPage(${i})">${i}</a>
+          <a class="page-link" href="#" data-page="${i}">${i}</a>
         </li>
       `;
     }
@@ -372,13 +375,13 @@ class JSONEditor {
       if (endPage < totalPages - 1) {
         paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
       }
-      paginationHTML += `<li class="page-item"><a class="page-link" href="#" onclick="window.jsonEditor.goToPage(${totalPages})">${totalPages}</a></li>`;
+      paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
     }
     
     // Next button
     paginationHTML += `
       <li class="page-item ${this.currentPage === totalPages ? 'disabled' : ''}">
-        <a class="page-link" href="#" onclick="window.jsonEditor.goToPage(${this.currentPage + 1})" ${this.currentPage === totalPages ? 'tabindex="-1"' : ''}>
+        <a class="page-link" href="#" data-page="${this.currentPage + 1}" ${this.currentPage === totalPages ? 'tabindex="-1"' : ''}>
           <i class="fas fa-chevron-right"></i>
         </a>
       </li>
@@ -386,6 +389,17 @@ class JSONEditor {
     
     paginationHTML += '</ul></nav>';
     paginationContainer.innerHTML = paginationHTML;
+    
+    // Add event listeners for pagination links
+    paginationContainer.querySelectorAll('a.page-link[data-page]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const page = parseInt(e.target.closest('a').dataset.page);
+        if (!isNaN(page)) {
+          this.goToPage(page);
+        }
+      });
+    });
   }
 
   goToPage(page) {
@@ -402,18 +416,6 @@ class JSONEditor {
     document.getElementById('currentPageItems').textContent = this.getCurrentPageData().length;
     document.getElementById('modifiedCount').textContent = this.changedItems.size;
     document.getElementById('columnsCount').textContent = this.visibleColumns.length;
-    
-    // Update monitoring status
-    const monitoringStatusEl = document.getElementById('monitoringStatus');
-    if (monitoringStatusEl) {
-      if (this.isMonitoring) {
-        monitoringStatusEl.innerHTML = '<i class="fas fa-circle text-success"></i>';
-        monitoringStatusEl.title = `Monitoraggio attivo (ogni ${this.monitoringIntervalMinutes} minuti)`;
-      } else {
-        monitoringStatusEl.innerHTML = '<i class="fas fa-circle text-secondary"></i>';
-        monitoringStatusEl.title = 'Monitoraggio disattivato';
-      }
-    }
   }
 
   getCurrentPageData() {
@@ -870,16 +872,6 @@ class JSONEditor {
   // Cleanup function to prevent memory leaks
   cleanup() {
     // Clear intervals
-    if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
-      this.monitoringInterval = null;
-    }
-    
-    if (this.countdownInterval) {
-      clearInterval(this.countdownInterval);
-      this.countdownInterval = null;
-    }
-    
     if (this.autoSaveTimeout) {
       clearTimeout(this.autoSaveTimeout);
       this.autoSaveTimeout = null;
@@ -1101,12 +1093,35 @@ class JSONEditor {
     }, 2000);
   }
 
-  showLoading() {
+  showLoading(message = 'Caricamento in corso...', subMessage = 'Attendere prego') {
     document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('loadingMessage').textContent = message;
+    document.getElementById('loadingSubMessage').textContent = subMessage;
+    
+    // Start dots animation
+    this.startLoadingDotsAnimation();
+  }
+
+  startLoadingDotsAnimation() {
+    const dotsElement = document.getElementById('loadingDots');
+    const dotPatterns = ['●○○○', '○●○○', '○○●○', '○○○●', '○○●○', '○●○○'];
+    let currentPattern = 0;
+    
+    this.dotsInterval = setInterval(() => {
+      if (dotsElement) {
+        dotsElement.textContent = dotPatterns[currentPattern];
+        currentPattern = (currentPattern + 1) % dotPatterns.length;
+      }
+    }, 300);
   }
 
   hideLoading() {
     document.getElementById('loadingOverlay').style.display = 'none';
+    // Clear dots animation
+    if (this.dotsInterval) {
+      clearInterval(this.dotsInterval);
+      this.dotsInterval = null;
+    }
   }
 
   showError(message) {
@@ -1389,300 +1404,6 @@ class JSONEditor {
       }
     }
   }
-  
-  // Data monitoring functionality
-  generateDataHash(data) {
-    try {
-      // Use a safer hash generation method that handles Unicode characters
-      const jsonString = JSON.stringify(data);
-      // Simple hash based on string length and content sample
-      let hash = 0;
-      for (let i = 0; i < Math.min(jsonString.length, 1000); i++) {
-        const char = jsonString.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-      }
-      return Math.abs(hash) + '_' + jsonString.length + '_' + Date.now();
-    } catch (error) {
-      console.error('Error generating data hash:', error);
-      return 'error_' + Date.now();
-    }
-  }
-
-  startMonitoring() {
-    if (this.isMonitoring) return;
-    
-    this.isMonitoring = true;
-    const intervalMs = this.monitoringIntervalMinutes * 60 * 1000; // Convert minutes to milliseconds
-    console.log(`Starting data monitoring... (checking every ${this.monitoringIntervalMinutes} minutes)`);
-    
-    // Initial check
-    this.checkForUpdates();
-    
-    // Set next check time
-    this.nextCheckTime = new Date(Date.now() + intervalMs);
-    
-    // Set up interval for periodic checks
-    this.monitoringInterval = setInterval(() => {
-      this.checkForUpdates();
-      this.nextCheckTime = new Date(Date.now() + intervalMs);
-    }, intervalMs);
-    
-    // Start countdown timer
-    this.startCountdown();
-    
-    // Add UI indicator
-    this.updateMonitoringStatus(true);
-  }
-
-  stopMonitoring() {
-    if (!this.isMonitoring) return;
-    
-    this.isMonitoring = false;
-    console.log('Stopping data monitoring...');
-    
-    if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
-      this.monitoringInterval = null;
-    }
-    
-    if (this.countdownInterval) {
-      clearInterval(this.countdownInterval);
-      this.countdownInterval = null;
-    }
-    
-    this.nextCheckTime = null;
-    
-    this.updateMonitoringStatus(false);
-  }
-
-  startCountdown() {
-    if (this.countdownInterval) {
-      clearInterval(this.countdownInterval);
-    }
-    
-    this.countdownInterval = setInterval(() => {
-      this.updateCountdown();
-    }, 1000); // Update every second
-  }
-
-  updateCountdown() {
-    const nextCheckEl = document.getElementById('nextCheckIn');
-    if (!nextCheckEl || !this.nextCheckTime || !this.isMonitoring) {
-      if (nextCheckEl) {
-        nextCheckEl.textContent = '-';
-      }
-      return;
-    }
-    
-    const now = new Date();
-    const timeDiff = this.nextCheckTime.getTime() - now.getTime();
-    
-    if (timeDiff <= 0) {
-      nextCheckEl.textContent = 'Ora';
-      return;
-    }
-    
-    const minutes = Math.floor(timeDiff / (1000 * 60));
-    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-    
-    if (minutes > 0) {
-      nextCheckEl.textContent = `${minutes}m ${seconds}s`;
-    } else {
-      nextCheckEl.textContent = `${seconds}s`;
-    }
-  }
-
-  async checkForUpdates() {
-    try {
-      this.lastCheckTime = new Date();
-      console.log(`Checking for remote data updates... (${this.lastCheckTime.toLocaleTimeString('it-IT')})`);
-      
-      const response = await fetch('/api/data-hash');
-      const result = await response.json();
-      
-      if (result.hash && result.hash !== this.lastDataHash) {
-        console.log('Remote data has changed, showing notification...');
-        this.showUpdateNotification();
-      } else {
-        console.log('No remote changes detected');
-      }
-    } catch (error) {
-      console.error('Error checking for updates:', error);
-    }
-  }
-
-  showUpdateNotification() {
-    // Create update notification
-    let updateNotification = document.getElementById('updateNotification');
-    if (!updateNotification) {
-      updateNotification = document.createElement('div');
-      updateNotification.id = 'updateNotification';
-      updateNotification.className = 'alert alert-warning position-fixed top-0 start-50 translate-middle-x mt-3';
-      updateNotification.style.zIndex = '9999';
-      updateNotification.style.width = 'auto';
-      updateNotification.innerHTML = `
-        <div class="d-flex align-items-center">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          <span class="me-3">Il file remoto è stato aggiornato. Vuoi ricaricare i dati?</span>
-          <button class="btn btn-sm btn-warning me-2" onclick="window.jsonEditor.reloadRemoteData()">
-            <i class="fas fa-sync me-1"></i>Ricarica
-          </button>
-          <button class="btn btn-sm btn-outline-secondary" onclick="window.jsonEditor.dismissUpdateNotification()">
-            <i class="fas fa-times me-1"></i>Ignora
-          </button>
-        </div>
-      `;
-      document.body.appendChild(updateNotification);
-    }
-    
-    updateNotification.style.display = 'block';
-  }
-
-  dismissUpdateNotification() {
-    const updateNotification = document.getElementById('updateNotification');
-    if (updateNotification) {
-      updateNotification.style.display = 'none';
-    }
-  }
-
-  async reloadRemoteData() {
-    if (this.changedItems.size > 0) {
-      const confirmed = confirm(
-        'Hai modifiche non salvate che verranno perse. Sei sicuro di voler ricaricare i dati remoti?'
-      );
-      
-      if (!confirmed) {
-        return;
-      }
-    }
-    
-    this.showLoading();
-    
-    try {
-      // Clear all changes
-      this.changedItems.clear();
-      
-      // Reload data
-      await this.loadData();
-      
-      // Dismiss notification
-      this.dismissUpdateNotification();
-      
-      this.showSuccessMessage('Dati ricaricati con successo dal file remoto!');
-    } catch (error) {
-      console.error('Error reloading remote data:', error);
-      this.showError('Errore durante il ricaricamento dei dati: ' + error.message);
-    } finally {
-      this.hideLoading();
-    }
-  }
-
-  updateMonitoringStatus(isActive) {
-    // Update navbar to show monitoring status
-    let monitoringIndicator = document.getElementById('monitoringIndicator');
-    if (!monitoringIndicator) {
-      // Find the navbar nav element
-      const navbarNav = document.querySelector('.navbar-nav');
-      if (navbarNav) {
-        const li = document.createElement('li');
-        li.className = 'nav-item dropdown';
-        li.innerHTML = `
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="monitoringIndicator">
-            <i class="fas fa-circle text-secondary me-1"></i>
-            <small>Monitor: Off</small>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><h6 class="dropdown-header">Monitoraggio File Remoto</h6></li>
-            <li><a class="dropdown-item" href="#" id="toggleMonitoring">
-              <i class="fas fa-power-off me-2"></i>Disattiva Monitoraggio
-            </a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><h6 class="dropdown-header">Intervallo di Controllo</h6></li>
-            <li><a class="dropdown-item" href="#" onclick="window.jsonEditor.setMonitoringInterval(3)">
-              <i class="fas fa-clock me-2"></i>3 minuti ${this.monitoringIntervalMinutes === 3 ? '<i class="fas fa-check text-success ms-auto"></i>' : ''}
-            </a></li>
-            <li><a class="dropdown-item" href="#" onclick="window.jsonEditor.setMonitoringInterval(5)">
-              <i class="fas fa-clock me-2"></i>5 minuti ${this.monitoringIntervalMinutes === 5 ? '<i class="fas fa-check text-success ms-auto"></i>' : ''}
-            </a></li>
-            <li><a class="dropdown-item" href="#" onclick="window.jsonEditor.setMonitoringInterval(10)">
-              <i class="fas fa-clock me-2"></i>10 minuti ${this.monitoringIntervalMinutes === 10 ? '<i class="fas fa-check text-success ms-auto"></i>' : ''}
-            </a></li>
-            <li><a class="dropdown-item" href="#" onclick="window.jsonEditor.setMonitoringInterval(15)">
-              <i class="fas fa-clock me-2"></i>15 minuti ${this.monitoringIntervalMinutes === 15 ? '<i class="fas fa-check text-success ms-auto"></i>' : ''}
-            </a></li>
-            <li><a class="dropdown-item" href="#" onclick="window.jsonEditor.setMonitoringInterval(30)">
-              <i class="fas fa-clock me-2"></i>30 minuti ${this.monitoringIntervalMinutes === 30 ? '<i class="fas fa-check text-success ms-auto"></i>' : ''}
-            </a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li class="dropdown-item-text small text-muted" id="lastCheckTime">
-              Ultimo controllo: Mai
-            </li>
-          </ul>
-        `;
-        navbarNav.appendChild(li);
-        monitoringIndicator = document.getElementById('monitoringIndicator');
-        
-        // Add toggle functionality
-        document.getElementById('toggleMonitoring').addEventListener('click', (e) => {
-          e.preventDefault();
-          if (this.isMonitoring) {
-            this.stopMonitoring();
-          } else {
-            this.startMonitoring();
-          }
-        });
-      }
-    }
-    
-    if (monitoringIndicator) {
-      const toggleBtn = document.getElementById('toggleMonitoring');
-      const lastCheckTimeEl = document.getElementById('lastCheckTime');
-      
-      if (isActive) {
-        monitoringIndicator.innerHTML = `
-          <i class="fas fa-circle text-success me-1"></i>
-          <small>Monitor: Attivo (${this.monitoringIntervalMinutes}min)</small>
-        `;
-        monitoringIndicator.title = `Monitoraggio file remoto attivo (controllo ogni ${this.monitoringIntervalMinutes} minuti)`;
-        if (toggleBtn) {
-          toggleBtn.innerHTML = '<i class="fas fa-power-off me-2"></i>Disattiva Monitoraggio';
-        }
-      } else {
-        monitoringIndicator.innerHTML = `
-          <i class="fas fa-circle text-secondary me-1"></i>
-          <small>Monitor: Off</small>
-        `;
-        monitoringIndicator.title = 'Monitoraggio file remoto disattivato';
-        if (toggleBtn) {
-          toggleBtn.innerHTML = '<i class="fas fa-play me-2"></i>Attiva Monitoraggio';
-        }
-      }
-      
-      // Update last check time
-      if (lastCheckTimeEl && this.lastCheckTime) {
-        lastCheckTimeEl.textContent = `Ultimo controllo: ${this.lastCheckTime.toLocaleTimeString('it-IT')}`;
-      }
-    }
-  }
-
-  setMonitoringInterval(minutes) {
-    this.monitoringIntervalMinutes = minutes;
-    localStorage.setItem('monitoringInterval', minutes.toString());
-    
-    // Restart monitoring with new interval if currently active
-    if (this.isMonitoring) {
-      this.stopMonitoring();
-      this.startMonitoring();
-    }
-    
-    this.updateMonitoringStatus(this.isMonitoring);
-    this.updateStatistics(); // Update the statistics display
-    
-    // Show confirmation
-    this.showSuccessMessage(`Intervallo di monitoraggio impostato a ${minutes} minuti`);
-  }
-
   scheduleAutoSave() {
     if (this.autoSaveTimeout) {
       clearTimeout(this.autoSaveTimeout);
@@ -1703,7 +1424,7 @@ class JSONEditor {
       return;
     }
 
-    this.showLoading();
+    this.showLoading('Salvataggio modifiche...', 'Creazione branch, aggiornamento file e creazione PR su GitHub. Questo potrebbe richiedere fino a 30 secondi.');
 
     try {
       // Convert changedItems Map to plain object for server
@@ -1717,14 +1438,33 @@ class JSONEditor {
 
       console.log('Saving changes:', changes);
 
+      // Update loading message to show progress
+      setTimeout(() => {
+        if (document.getElementById('loadingOverlay').style.display === 'flex') {
+          this.showLoading('Elaborazione in corso...', 'Operazioni GitHub in corso. Attendere ancora qualche secondo...');
+        }
+      }, 5000);
+
+      setTimeout(() => {
+        if (document.getElementById('loadingOverlay').style.display === 'flex') {
+          this.showLoading('Quasi terminato...', 'Finalizzazione della pull request. Ancora qualche istante...');
+        }
+      }, 15000);
+
+      // Create an AbortController for timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
       const response = await fetch('/api/data/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(changes)
+        body: JSON.stringify(changes),
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
       const result = await response.json();
 
       if (!response.ok) {
@@ -1745,14 +1485,6 @@ class JSONEditor {
         }
         
         this.showSuccessMessage(successMessage);
-        
-        // Update data hash for monitoring
-        if (result.dataHash) {
-          this.lastDataHash = result.dataHash;
-        } else {
-          // Generate new hash from updated data if not provided
-          this.lastDataHash = this.generateDataHash(this.data);
-        }
       } else {
         throw new Error(result.error || 'Errore sconosciuto durante il salvataggio');
       }
@@ -1763,14 +1495,20 @@ class JSONEditor {
       let errorMessage = 'Errore durante il salvataggio delle modifiche: ' + error.message;
       
       // Handle specific error cases
-      if (error.message.includes('Failed to fetch')) {
+      if (error.name === 'AbortError') {
+        errorMessage = 'Il salvataggio ha richiesto troppo tempo. Le modifiche potrebbero essere state salvate comunque. Ricarica la pagina per verificare.';
+      } else if (error.message.includes('Failed to fetch')) {
         errorMessage = 'Errore di connessione. Verifica la tua connessione internet e riprova.';
+        this.showRetryOption();
       } else if (error.message.includes('401')) {
         errorMessage = 'Errore di autenticazione. Le credenziali GitHub potrebbero essere scadute.';
       } else if (error.message.includes('403')) {
         errorMessage = 'Accesso negato. Verifica i permessi del repository GitHub.';
       } else if (error.message.includes('404')) {
         errorMessage = 'Repository o file non trovato. Verifica la configurazione.';
+      } else if (error.message.includes('timeout') || error.message.includes('ETIMEDOUT')) {
+        errorMessage = 'Timeout durante il salvataggio. Il server potrebbe essere sovraccarico. Riprova tra qualche minuto.';
+        this.showRetryOption();
       }
       
       this.showError(errorMessage);
@@ -1778,6 +1516,39 @@ class JSONEditor {
     } finally {
       this.hideLoading();
     }
+  }
+
+  showRetryOption() {
+    // Create retry toast
+    let retryToast = document.getElementById('retryToast');
+    if (!retryToast) {
+      retryToast = document.createElement('div');
+      retryToast.id = 'retryToast';
+      retryToast.className = 'toast position-fixed top-0 end-0 m-3';
+      retryToast.style.zIndex = '9999';
+      retryToast.innerHTML = `
+        <div class="toast-header bg-warning text-dark">
+          <i class="fas fa-redo me-2"></i>
+          <strong class="me-auto">Riprova Salvataggio</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+          <p>Il salvataggio è fallito. Vuoi riprovare?</p>
+          <button class="btn btn-sm btn-warning" id="retryButton">
+            <i class="fas fa-redo me-1"></i>Riprova
+          </button>
+        </div>
+      `;
+      document.body.appendChild(retryToast);
+      
+      // Add event listener for retry button
+      document.getElementById('retryButton').addEventListener('click', () => {
+        this.saveChanges();
+      });
+    }
+    
+    const toast = new bootstrap.Toast(retryToast, { autohide: false });
+    toast.show();
   }
 
   // Bulk operations functionality
@@ -1833,7 +1604,7 @@ class JSONEditor {
               <button class="btn btn-outline-danger" id="bulkDeleteBtn">
                 <i class="fas fa-trash me-1"></i>Elimina selezionati
               </button>
-              <button class="btn btn-outline-secondary" onclick="window.jsonEditor.clearSelection()">
+              <button class="btn btn-outline-secondary" id="clearSelectionBtn">
                 <i class="fas fa-times me-1"></i>Deseleziona
               </button>
             </div>
@@ -1847,6 +1618,7 @@ class JSONEditor {
         // Add event listeners
         document.getElementById('bulkEditBtn').addEventListener('click', () => this.openBulkEditModal());
         document.getElementById('bulkDeleteBtn').addEventListener('click', () => this.bulkDelete());
+        document.getElementById('clearSelectionBtn').addEventListener('click', () => this.clearSelection());
       } else {
         document.getElementById('selectedCount').textContent = this.selectedItems.size;
       }

@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
         break;
       case 'realSynopsis':
         isValid = value.length <= 500;
-        updateCharacterCounter(field, value.length, 500);
+        // Don't update character counter here - it's handled by script.js
         break;
       case 'realPublishedYear':
         const year = parseInt(value);

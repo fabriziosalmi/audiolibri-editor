@@ -1,3 +1,24 @@
+// Safe localStorage functions - Global scope
+function safeLocalStorageSet(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (error) {
+    console.error('Error saving to localStorage:', error);
+    return false;
+  }
+}
+
+function safeLocalStorageGet(key, defaultValue = null) {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (error) {
+    console.error('Error reading from localStorage:', error);
+    return defaultValue;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   // DOM elements
   const itemsList = document.getElementById('itemsList');
@@ -14,7 +35,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const saveChangesBtn = document.getElementById('saveChangesBtn');
   const bulkEditBtn = document.getElementById('bulkEditBtn');
   const exportBtn = document.getElementById('exportBtn');
-  const genreManagementBtn = document.getElementById('genreManagementBtn');
   
   // Modals
   const prModal = new bootstrap.Modal(document.getElementById('prModal'));
@@ -23,8 +43,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
   const importSingleModal = new bootstrap.Modal(document.getElementById('importSingleModal'));
   const importPlaylistModal = new bootstrap.Modal(document.getElementById('importPlaylistModal'));
-  const genreManagementModal = new bootstrap.Modal(document.getElementById('genreManagementModal'));
-  const mergeGenresModal = new bootstrap.Modal(document.getElementById('mergeGenresModal'));
   
   const submitPrBtn = document.getElementById('submitPrBtn');
   const prLink = document.getElementById('prLink');
@@ -107,7 +125,6 @@ document.addEventListener('DOMContentLoaded', function() {
   saveChangesBtn.addEventListener('click', openPrModal);
   bulkEditBtn.addEventListener('click', openBulkEditModal);
   exportBtn.addEventListener('click', openExportModal);
-  // Note: genreManagementBtn listener is in genre-management.js to avoid conflicts
   
   submitPrBtn.addEventListener('click', submitChanges);
   applyBulkEditBtn.addEventListener('click', applyBulkEdit);
@@ -1764,7 +1781,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateCharacterCount() {
     if (synopsisTextarea && synopsisCount) {
       const currentLength = synopsisTextarea.value.length;
-      const maxLength = 2000;
+      const maxLength = 500;
       synopsisCount.textContent = `${currentLength}/${maxLength}`;
       synopsisCount.className = currentLength > maxLength ? 'text-danger' : 'text-muted';
     }
@@ -1896,5 +1913,142 @@ document.addEventListener('DOMContentLoaded', function() {
     };
   });
 });
+
+// Welcome modal functionality
+  function initializeWelcomeModal() {
+    const welcomeModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
+    
+    // Check if user has chosen not to show welcome modal
+    const dontShow = localStorage.getItem('dontShowWelcome') === 'true';
+    
+    if (!dontShow) {
+      // Show welcome modal after a short delay
+      setTimeout(() => {
+        welcomeModal.show();
+      }, 1000);
+    }
+    
+    // Handle "don't show again" checkbox
+    const dontShowCheckbox = document.getElementById('dontShowWelcome');
+    if (dontShowCheckbox) {
+      dontShowCheckbox.addEventListener('change', function() {
+        try {
+          localStorage.setItem('dontShowWelcome', this.checked ? 'true' : 'false');
+        } catch (error) {
+          console.error('Error saving welcome preference:', error);
+        }
+      });
+    }
+
+    // Handle action card clicks
+    const actionCards = document.querySelectorAll('.action-card[data-action]');
+    actionCards.forEach(card => {
+      card.addEventListener('click', function() {
+        const action = this.getAttribute('data-action');
+        handleWelcomeAction(action);
+        welcomeModal.hide();
+      });
+    });
+  }
+
+  function handleWelcomeAction(action) {
+    switch (action) {
+      case 'edit-item':
+        // Focus on search to help user find an item to edit
+        if (searchInput) {
+          searchInput.focus();
+          showToast('Cerca un elemento da modificare usando la barra di ricerca', 'info');
+        }
+        break;
+        
+      case 'bulk-edit':
+        // Show instructions for bulk edit
+        showToast('Seleziona più elementi usando le checkbox, poi clicca "Modifica Multipla"', 'info');
+        break;
+        
+      case 'import-youtube':
+        // Show choice between single video and playlist
+        setTimeout(() => {
+          if (confirm('Vuoi importare un singolo video (OK) o una playlist (Annulla)?')) {
+            importSingleModal.show();
+          } else {
+            importPlaylistModal.show();
+          }
+        }, 100);
+        break;
+        
+      case 'json-editor':
+        // Redirect to JSON editor
+        window.location.href = 'json-editor.html';
+        break;
+        
+      default:
+        console.log('Unknown action:', action);
+    }
+  }
+
+  // Initialize welcome modal when DOM is ready
+  initializeWelcomeModal();
+
+// Toast notification system
+  function showToast(message, type = 'info') {
+    // Validate input parameters
+    if (!message || typeof message !== 'string') {
+      console.warn('showToast: Invalid message parameter');
+      return;
+    }
+    
+    // Sanitize message to prevent XSS
+    const sanitizedMessage = message.replace(/<script[^>]*>.*?<\/script>/gi, '').replace(/<[^>]*>/g, '').trim();
+    
+    // Create toast element
+    const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body">
+          ${sanitizedMessage}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Show toast with error handling
+    try {
+      const bsToast = new bootstrap.Toast(toast, {
+        autohide: true,
+        delay: type === 'danger' ? 8000 : 5000 // Keep error messages longer
+      });
+      bsToast.show();
+    } catch (error) {
+      console.error('Error showing toast:', error);
+      // Fallback to browser alert if Bootstrap fails
+      alert(sanitizedMessage);
+    }
+    
+    // Remove toast after it's hidden
+    toast.addEventListener('hidden.bs.toast', () => {
+      toast.remove();
+    });
+  }
+
+  function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'toast-container position-fixed top-0 end-0 p-3';
+    container.style.zIndex = '9999';
+    container.setAttribute('aria-live', 'polite');
+    container.setAttribute('aria-atomic', 'true');
+    document.body.appendChild(container);
+    return container;
+  }
 
 //# sourceMappingURL=app.js.map

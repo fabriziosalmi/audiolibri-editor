@@ -25,15 +25,28 @@ const rateLimiters = {
 };
 
 // Security headers configuration
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
-      scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'"],
+      scriptSrc: [
+        "'self'", 
+        "'unsafe-inline'", // Allow inline scripts for editing functionality
+        "https://static.cloudflareinsights.com", // Allow Cloudflare analytics
+        "https://www.googletagmanager.com" // Common analytics
+      ],
       imgSrc: ["'self'", "data:", "https:", "http:"],
-      connectSrc: ["'self'", "https://api.github.com", "https://raw.githubusercontent.com"],
-      fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+      connectSrc: [
+        "'self'", 
+        "https://api.github.com", 
+        "https://raw.githubusercontent.com",
+        "https://cloudflareinsights.com", // Allow Cloudflare analytics connections
+        "https://www.google-analytics.com" // Common analytics
+      ],
+      fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"]
@@ -51,17 +64,21 @@ const corsOptions = {
     // In production, restrict to specific domains
     const allowedOrigins = process.env.ALLOWED_ORIGINS 
       ? process.env.ALLOWED_ORIGINS.split(',')
-      : ['http://localhost:3000'];
+      : ['http://localhost:3000', 'http://127.0.0.1:3000'];
     
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.warn(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   optionsSuccessStatus: 200
 };
+
+// Create CORS middleware
+const corsMiddleware = cors(corsOptions);
 
 // Request logging middleware
 const requestLogger = (req, res, next) => {
@@ -156,7 +173,7 @@ const errorHandler = (err, req, res, next) => {
 module.exports = {
   rateLimiters,
   securityHeaders,
-  corsOptions,
+  corsOptions: corsMiddleware,
   requestLogger,
   sanitizeInput,
   errorHandler
