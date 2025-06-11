@@ -1,6 +1,6 @@
 # Audiolibri Editor
 
-A modern, feature-rich web application for editing the JSON data of the Audiolibri project and submitting changes via GitHub pull requests.
+A modern, feature-rich web application for editing the JSON data of the [Audiolibri.org](https://github.com/fabriziosalmi/audiolibri) project and submitting changes via GitHub pull requests.
 
 ## Screenshots
 
