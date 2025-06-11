@@ -2,6 +2,10 @@
 
 A modern, feature-rich web application for editing the JSON data of the Audiolibri project and submitting changes via GitHub pull requests.
 
+## Screenshots
+
+![]()
+
 ## ✨ Features
 
 ### Core Functionality
