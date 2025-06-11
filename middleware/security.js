@@ -64,7 +64,7 @@ const corsOptions = {
     // In production, restrict to specific domains
     const allowedOrigins = process.env.ALLOWED_ORIGINS 
       ? process.env.ALLOWED_ORIGINS.split(',')
-      : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+      : ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://edit.audiolibri.org'];
     
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
