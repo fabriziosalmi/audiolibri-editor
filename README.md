@@ -4,7 +4,7 @@ A modern, feature-rich web application for editing the JSON data of the Audiolib
 
 ## Screenshots
 
-![]()
+![screenshot](https://github.com/fabriziosalmi/audiolibri-editor/blob/main/screenshot.png?raw=true)
 
 ## ✨ Features
 
